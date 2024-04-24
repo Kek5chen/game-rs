@@ -1,4 +1,5 @@
 mod app;
+mod state;
 
 use std::error::Error;
 use crate::app::App;
@@ -7,7 +8,7 @@ use crate::app::App;
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    App::default().run();
+    App::default().run().await;
 
     Ok(())
 }

@@ -3,9 +3,11 @@ use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::{EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
+use crate::state::State;
 
 pub struct App {
     window_builder: Option<WindowBuilder>,
+    state: Option<State>,
 }
 
 #[allow(unused)]
@@ -20,6 +22,7 @@ impl Default for App {
                     }))
                     .with_title("Default Window"),
             ),
+            state: None,
         }
     }
 }
@@ -33,22 +36,44 @@ impl App {
                     .with_inner_size(Size::Physical(PhysicalSize { width, height }))
                     .with_title(title),
             ),
+            state: None
         }
     }
 
-    pub fn run(self) {
+    async fn init_state(&mut self) -> EventLoop<()> {
         let event_loop = EventLoop::new().unwrap();
         let window = self
             .window_builder
-            .unwrap_or_default()
+            .take()
+            .unwrap()
             .build(&event_loop)
             .unwrap();
+
+        self.state = Some(State::new(window).await);
+
         event_loop
-            .run(|event, window_target| match event {
+    }
+
+    pub async fn run(mut self) {
+        let event_loop = self.init_state().await;
+
+        let mut state = self.state.unwrap();
+
+        event_loop
+            .run(move |event, window_target| match event {
                 Event::WindowEvent {
                     ref event,
                     window_id,
-                } if window_id == window.id() => match event {
+                } if window_id == state.window().id() => match event {
+                    WindowEvent::RedrawRequested => {
+                        state.update();
+                        match state.render() {
+                            Ok(_) => {}
+                            Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                            Err(wgpu::SurfaceError::OutOfMemory) => window_target.exit(),
+                            Err(e) => eprintln!("{:?}", e),
+                        }
+                    }
                     WindowEvent::CloseRequested
                     | WindowEvent::KeyboardInput {
                         event:
@@ -58,6 +83,7 @@ impl App {
                             },
                         ..
                     } => window_target.exit(),
+                    WindowEvent::Resized(size) => state.resize(*size),
                     _ => {}
                 },
                 _ => {}
