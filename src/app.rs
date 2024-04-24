@@ -3,7 +3,6 @@ use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::{EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use crate::state::State;
 
 pub struct App {
     window_builder: Option<WindowBuilder>,
@@ -36,7 +35,7 @@ impl App {
                     .with_inner_size(Size::Physical(PhysicalSize { width, height }))
                     .with_title(title),
             ),
-            state: None
+            state: None,
         }
     }
 
