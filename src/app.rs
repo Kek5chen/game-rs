@@ -1,6 +1,7 @@
+use crate::state::State;
 use winit::dpi::{PhysicalSize, Size};
 use winit::event::{Event, KeyEvent, WindowEvent};
-use winit::event_loop::{EventLoop};
+use winit::event_loop::EventLoop;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
 
@@ -63,28 +64,32 @@ impl App {
                 Event::WindowEvent {
                     ref event,
                     window_id,
-                } if window_id == state.window().id() => match event {
-                    WindowEvent::RedrawRequested => {
-                        state.update();
-                        match state.render() {
-                            Ok(_) => {}
-                            Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
-                            Err(wgpu::SurfaceError::OutOfMemory) => window_target.exit(),
-                            Err(e) => eprintln!("{:?}", e),
+                } if window_id == state.window().id() => {
+                    if !state.input(event) {
+                        match event {
+                            WindowEvent::RedrawRequested => {
+                                state.update();
+                                match state.render() {
+                                    Ok(_) => {}
+                                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                                    Err(wgpu::SurfaceError::OutOfMemory) => window_target.exit(),
+                                    Err(e) => eprintln!("{:?}", e),
+                                }
+                            }
+                            WindowEvent::CloseRequested
+                            | WindowEvent::KeyboardInput {
+                                event:
+                                    KeyEvent {
+                                        physical_key: PhysicalKey::Code(KeyCode::Escape),
+                                        ..
+                                    },
+                                ..
+                            } => window_target.exit(),
+                            WindowEvent::Resized(size) => state.resize(*size),
+                            _ => {}
                         }
                     }
-                    WindowEvent::CloseRequested
-                    | WindowEvent::KeyboardInput {
-                        event:
-                            KeyEvent {
-                                physical_key: PhysicalKey::Code(KeyCode::Escape),
-                                ..
-                            },
-                        ..
-                    } => window_target.exit(),
-                    WindowEvent::Resized(size) => state.resize(*size),
-                    _ => {}
-                },
+                }
                 _ => {}
             })
             .unwrap()
