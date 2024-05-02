@@ -1,3 +1,7 @@
+use wgpu::{
+    include_wgsl, ColorTargetState, ColorWrites, FragmentState, RenderPipeline,
+    RenderPipelineDescriptor, VertexState,
+};
 use winit::event::WindowEvent;
 use winit::window::Window;
 
@@ -8,6 +12,7 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     window: Window,
+    pipeline: RenderPipeline,
     color: wgpu::Color,
 }
 
@@ -45,8 +50,33 @@ impl State {
 
         let config = surface
             .get_default_config(&adapter, size.width, size.height)
-            .expect("Surfaces are not supported by this adapter.");
+            .unwrap();
         surface.configure(&device, &config);
+
+        let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
+
+        let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+            label: Some("Render Pipeline"),
+            layout: None,
+            vertex: VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[],
+            },
+            primitive: Default::default(),
+            depth_stencil: None,
+            multisample: Default::default(),
+            fragment: Some(FragmentState {
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[Some(ColorTargetState {
+                    format: config.format,
+                    blend: None,
+                    write_mask: ColorWrites::ALL,
+                })],
+            }),
+            multiview: None,
+        });
 
         State {
             surface,
@@ -55,12 +85,13 @@ impl State {
             config,
             size,
             window,
+            pipeline,
             color: wgpu::Color {
                 r: 0.1,
                 g: 0.2,
                 b: 0.3,
                 a: 1.0,
-            }
+            },
         }
     }
 
@@ -89,22 +120,26 @@ impl State {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(self.color),
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            occlusion_query_set: None,
-            timestamp_writes: None,
-        });
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(self.color),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                occlusion_query_set: None,
+                timestamp_writes: None,
+            });
+            rpass.set_pipeline(&self.pipeline);
+            rpass.draw(0..3, 0..1)
+        }
 
-        self.queue.submit(std::iter::once(encoder.finish()));
+        self.queue.submit(Some(encoder.finish()));
         output.present();
 
         Ok(())
