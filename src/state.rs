@@ -1,10 +1,10 @@
+use crate::buffer::{TRIANGLE, TRIANGLE2D};
 use std::mem::size_of_val;
-use wgpu::{include_wgsl, Backends, ColorTargetState, ColorWrites, FragmentState, RenderPipeline, RenderPipelineDescriptor, VertexState, Adapter, Queue, Device, Surface, SurfaceConfiguration, ShaderModule, BufferDescriptor, BufferUsages, Buffer, VertexBufferLayout, VertexStepMode, VertexAttribute, VertexFormat, BufferAddress};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
+use wgpu::{include_wgsl, Adapter, Backends, Buffer, BufferAddress, BufferDescriptor, BufferUsages, ColorTargetState, ColorWrites, Device, FragmentState, Queue, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, ShaderModule, Surface, SurfaceConfiguration, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode, TextureDescriptor, Extent3d, TextureDimension, TextureFormat, TextureUsages, TextureViewDimension, TextureAspect, DepthStencilState, CompareFunction, StencilState, DepthBiasState};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
-use crate::buffer::{TRIANGLE, TRIANGLE2D};
 
 pub struct State {
     surface: wgpu::Surface<'static>,
@@ -13,6 +13,7 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     window: Window,
+    depth_texture: wgpu::Texture,
     pipeline: wgpu::RenderPipeline,
     color: wgpu::Color,
     pub buffer: wgpu::Buffer,
@@ -85,6 +86,22 @@ impl State {
         config
     }
 
+    fn setup_depth_texture(size: &PhysicalSize<u32>, device: &Device) -> wgpu::Texture {
+        let depth_texture = device.create_texture(&TextureDescriptor {
+            label: Some("Depth Texture"),
+            size: Extent3d {
+                width: size.width, height: size.height, depth_or_array_layers: 1
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Depth32Float,
+            usage: TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[TextureFormat::Depth32Float]
+        });
+        depth_texture
+    }
+
     fn setup_pipeline(
         device: &Device,
         config: &SurfaceConfiguration,
@@ -107,7 +124,13 @@ impl State {
                 }],
             },
             primitive: Default::default(),
-            depth_stencil: None,
+            depth_stencil: Some(DepthStencilState {
+                format: TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: CompareFunction::Less,
+                stencil: StencilState::default(),
+                bias: DepthBiasState::default(),
+            }),
             multisample: Default::default(),
             fragment: Some(FragmentState {
                 module: shader,
@@ -142,6 +165,7 @@ impl State {
         let (device, queue) = Self::get_device_and_queue(&adapter).await;
         let config = Self::configure_surface(&size, &surface, &adapter, &device);
 
+        let depth_texture = Self::setup_depth_texture(&size, &device);
         let shader = Self::load_shader(&device);
         let pipeline = Self::setup_pipeline(&device, &config, &shader);
 
@@ -158,6 +182,7 @@ impl State {
             config,
             size,
             window,
+            depth_texture,
             pipeline,
             buffer,
             color: wgpu::Color {
@@ -180,6 +205,7 @@ impl State {
         self.config.width = new_size.width;
         self.config.height = new_size.height;
         self.surface.configure(&self.device, &self.config);
+        self.depth_texture = Self::setup_depth_texture(&self.size, &self.device);
     }
 
     pub fn update(&mut self) {
@@ -191,6 +217,17 @@ impl State {
         let color_view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+        // let depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor {
+        //     label: Some("Depth Texture View"),
+        //     format: Some(TextureFormat::Depth32Float),
+        //     dimension: Some(TextureViewDimension::D2),
+        //     aspect: TextureAspect::DepthOnly,
+        //     base_mip_level: 0,
+        //     mip_level_count: None,
+        //     base_array_layer: 0,
+        //     array_layer_count: None,
+        // });
+        let depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -205,7 +242,14 @@ impl State {
                         store: wgpu::StoreOp::Store,
                     },
                 })],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                    view: &depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0f32),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
