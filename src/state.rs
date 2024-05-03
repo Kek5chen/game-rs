@@ -119,8 +119,8 @@ impl State {
     pub async fn new(window: Window) -> Self {
         let size = window.inner_size();
         let size = PhysicalSize {
-            height: size.height.min(1),
-            width: size.width.min(1),
+            height: size.height.max(1),
+            width: size.width.max(1),
         };
 
         let instance = Self::setup_instance();
