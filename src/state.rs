@@ -72,7 +72,12 @@ impl State {
         (device, queue)
     }
 
-    fn configure_surface(size: &PhysicalSize<u32>, surface: &Surface, adapter: &Adapter, device: &Device) -> SurfaceConfiguration {
+    fn configure_surface(
+        size: &PhysicalSize<u32>,
+        surface: &Surface,
+        adapter: &Adapter,
+        device: &Device,
+    ) -> SurfaceConfiguration {
         let config = surface
             .get_default_config(adapter, size.width, size.height)
             .unwrap();
@@ -80,7 +85,11 @@ impl State {
         config
     }
 
-    fn setup_pipeline(device: &Device, config: &SurfaceConfiguration, shader: &ShaderModule) -> RenderPipeline {
+    fn setup_pipeline(
+        device: &Device,
+        config: &SurfaceConfiguration,
+        shader: &ShaderModule,
+    ) -> RenderPipeline {
         let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: None,
