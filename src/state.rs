@@ -56,7 +56,11 @@ impl State {
                 "Couldn't find anything that supports rendering stuff. How are you reading this..?",
             );
 
-        println!("Using: {} through {}", adapter.get_info().name, adapter.get_info().backend.to_str());
+        println!(
+            "Using: {} through {}",
+            adapter.get_info().name,
+            adapter.get_info().backend.to_str()
+        );
         adapter
     }
 
