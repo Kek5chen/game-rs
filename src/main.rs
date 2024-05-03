@@ -1,5 +1,6 @@
 mod app;
 mod state;
+mod buffer;
 
 use std::error::Error;
 use crate::app::App;

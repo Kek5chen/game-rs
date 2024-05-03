@@ -1,7 +1,10 @@
-use wgpu::{include_wgsl, Backends, ColorTargetState, ColorWrites, FragmentState, RenderPipeline, RenderPipelineDescriptor, VertexState, Adapter, Queue, Device, Surface, SurfaceConfiguration, ShaderModule};
+use std::mem::size_of_val;
+use wgpu::{include_wgsl, Backends, ColorTargetState, ColorWrites, FragmentState, RenderPipeline, RenderPipelineDescriptor, VertexState, Adapter, Queue, Device, Surface, SurfaceConfiguration, ShaderModule, BufferDescriptor, BufferUsages, Buffer, VertexBufferLayout, VertexStepMode, VertexAttribute, VertexFormat, BufferAddress};
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
+use crate::buffer::{TRIANGLE, TRIANGLE2D};
 
 pub struct State {
     surface: wgpu::Surface<'static>,
@@ -10,8 +13,9 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     window: Window,
-    pipeline: RenderPipeline,
+    pipeline: wgpu::RenderPipeline,
     color: wgpu::Color,
+    pub buffer: wgpu::Buffer,
 }
 
 impl State {
@@ -77,15 +81,23 @@ impl State {
             label: Some("Render Pipeline"),
             layout: None,
             vertex: VertexState {
-                module: &shader,
+                module: shader,
                 entry_point: "vs_main",
-                buffers: &[],
+                buffers: &[VertexBufferLayout {
+                    array_stride: (size_of_val(&TRIANGLE2D) / 3) as BufferAddress,
+                    attributes: &[VertexAttribute {
+                        format: VertexFormat::Float32x2,
+                        offset: 0,
+                        shader_location: 0,
+                    }],
+                    step_mode: VertexStepMode::Vertex,
+                }],
             },
             primitive: Default::default(),
             depth_stencil: None,
             multisample: Default::default(),
             fragment: Some(FragmentState {
-                module: &shader,
+                module: shader,
                 entry_point: "fs_main",
                 targets: &[Some(ColorTargetState {
                     format: config.format,
@@ -120,6 +132,12 @@ impl State {
         let shader = Self::load_shader(&device);
         let pipeline = Self::setup_pipeline(&device, &config, &shader);
 
+        let buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Buffer"),
+            usage: BufferUsages::VERTEX,
+            contents: bytemuck::cast_slice(&TRIANGLE2D),
+        });
+
         State {
             surface,
             device,
@@ -128,6 +146,7 @@ impl State {
             size,
             window,
             pipeline,
+            buffer,
             color: wgpu::Color {
                 r: 0.1,
                 g: 0.2,
@@ -178,6 +197,7 @@ impl State {
                 timestamp_writes: None,
             });
             rpass.set_pipeline(&self.pipeline);
+            rpass.set_vertex_buffer(0, self.buffer.slice(..));
             rpass.draw(0..3, 0..1)
         }
 
