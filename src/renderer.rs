@@ -20,9 +20,8 @@ impl Renderer {
             window
         }
     }
-    
-    pub fn begin_render(&mut self) -> Result<RenderContext, SurfaceError>
-    {
+
+    pub fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> {
         let output = self.state.surface.get_current_texture()?;
         let color_view = output
             .texture
@@ -46,7 +45,12 @@ impl Renderer {
             .device
             .create_command_encoder(&CommandEncoderDescriptor::default());
 
-        Ok(RenderContext { output, color_view, depth_view, encoder })
+        Ok(RenderContext {
+            output,
+            color_view,
+            depth_view,
+            encoder,
+        })
     }
 
     pub(crate) fn render(&mut self, ctx: &mut RenderContext) {

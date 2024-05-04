@@ -7,8 +7,6 @@ use crate::app::App;
 use env_logger::Env;
 use log::LevelFilter;
 use std::error::Error;
-use wgpu::{Color, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp};
-use crate::renderer::RenderContext;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
