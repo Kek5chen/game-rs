@@ -1,7 +1,7 @@
 use crate::buffer::{TRIANGLE, TRIANGLE2D};
 use std::mem::size_of_val;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{include_wgsl, Adapter, Backends, Buffer, BufferAddress, BufferDescriptor, BufferUsages, ColorTargetState, ColorWrites, Device, FragmentState, Queue, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, ShaderModule, Surface, SurfaceConfiguration, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode, TextureDescriptor, Extent3d, TextureDimension, TextureFormat, TextureUsages, TextureViewDimension, TextureAspect, DepthStencilState, CompareFunction, StencilState, DepthBiasState};
+use wgpu::{include_wgsl, Adapter, Backends, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferAddress, BufferBindingType, BufferUsages, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState, Device, Extent3d, FragmentState, Queue, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderStages, StencilState, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode, BindGroupEntry, BindingResource};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
@@ -15,6 +15,7 @@ pub struct State {
     window: Window,
     depth_texture: wgpu::Texture,
     pipeline: wgpu::RenderPipeline,
+    bind_group_layout: BindGroupLayout,
     color: wgpu::Color,
     pub buffer: wgpu::Buffer,
 }
@@ -106,10 +107,28 @@ impl State {
         device: &Device,
         config: &SurfaceConfiguration,
         shader: &ShaderModule,
-    ) -> RenderPipeline {
+    ) -> (RenderPipeline, BindGroupLayout) {
+        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("Bind Group Layout"),
+            entries: &[BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages::all(),
+                ty: BindingType::Buffer {
+                    ty: BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Pipeline Layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
         let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
-            layout: None,
+            layout: Some(&layout),
             vertex: VertexState {
                 module: shader,
                 entry_point: "vs_main",
@@ -143,7 +162,7 @@ impl State {
             }),
             multiview: None,
         });
-        pipeline
+        (pipeline, bind_group_layout)
     }
 
     fn load_shader(device: &Device) -> ShaderModule {
@@ -167,7 +186,7 @@ impl State {
 
         let depth_texture = Self::setup_depth_texture(&size, &device);
         let shader = Self::load_shader(&device);
-        let pipeline = Self::setup_pipeline(&device, &config, &shader);
+        let (pipeline, bind_group_layout) = Self::setup_pipeline(&device, &config, &shader);
 
         let buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Buffer"),
@@ -183,6 +202,7 @@ impl State {
             size,
             window,
             depth_texture,
+            bind_group_layout,
             pipeline,
             buffer,
             color: wgpu::Color {
@@ -228,6 +248,16 @@ impl State {
         //     array_layer_count: None,
         // });
         let depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let uniform = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Uniform Buffer"),
+            contents: bytemuck::cast_slice(&vec),
+            usage: BufferUsages::UNIFORM,
+        });
+        let bind_group = self.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Bind Group"),
+            layout: &self.bind_group_layout,
+            entries: &[BindGroupEntry { binding: 0, resource: BindingResource::Buffer(uniform.as_entire_buffer_binding()) }],
+        });
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -254,6 +284,7 @@ impl State {
                 timestamp_writes: None,
             });
             rpass.set_pipeline(&self.pipeline);
+            rpass.set_bind_group(0, &bind_group, &[]);
             rpass.set_vertex_buffer(0, self.buffer.slice(..));
             rpass.draw(0..3, 0..1)
         }
