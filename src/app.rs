@@ -1,4 +1,4 @@
-use crate::state::State;
+use crate::renderer::Renderer;
 use winit::dpi::{PhysicalSize, Size};
 use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoop;
@@ -7,7 +7,7 @@ use winit::window::WindowBuilder;
 
 pub struct App {
     window_builder: Option<WindowBuilder>,
-    state: Option<State>,
+    renderer: Option<Renderer>,
 }
 
 #[allow(unused)]
@@ -22,7 +22,7 @@ impl Default for App {
                     }))
                     .with_title("Default Window"),
             ),
-            state: None,
+            renderer: None,
         }
     }
 }
@@ -36,7 +36,7 @@ impl App {
                     .with_inner_size(Size::Physical(PhysicalSize { width, height }))
                     .with_title(title),
             ),
-            state: None,
+            renderer: None,
         }
     }
 
@@ -49,7 +49,7 @@ impl App {
             .build(&event_loop)
             .unwrap();
 
-        self.state = Some(State::new(window).await);
+        self.renderer = Some(Renderer::new(window).await);
 
         event_loop
     }
@@ -57,21 +57,23 @@ impl App {
     pub async fn run(mut self) {
         let event_loop = self.init_state().await;
 
-        let mut state = self.state.unwrap();
-
+        let renderer = self.renderer.as_mut().unwrap();
+        
         event_loop
             .run(move |event, window_target| match event {
                 Event::WindowEvent {
                     ref event,
                     window_id,
-                } if window_id == state.window().id() => {
-                    if !state.input(event) {
+                } if window_id == renderer.window().id() => {
+                    if !renderer.state.input(event) {
                         match event {
                             WindowEvent::RedrawRequested => {
-                                state.update();
-                                match state.begin_render() {
-                                    Ok(ctx) => { state.end_render(ctx); }
-                                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                                renderer.state.update();
+                                match renderer.begin_render() {
+                                    Ok(ctx) => {
+                                        renderer.end_render(ctx);
+                                    }
+                                    Err(wgpu::SurfaceError::Lost) => renderer.state.resize(renderer.state.size),
                                     Err(wgpu::SurfaceError::OutOfMemory) => window_target.exit(),
                                     Err(e) => eprintln!("{:?}", e),
                                 }
@@ -85,7 +87,7 @@ impl App {
                                     },
                                 ..
                             } => window_target.exit(),
-                            WindowEvent::Resized(size) => state.resize(*size),
+                            WindowEvent::Resized(size) => renderer.state.resize(*size),
                             _ => {}
                         }
                     }

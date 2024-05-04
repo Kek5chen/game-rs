@@ -6,22 +6,14 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 pub struct State {
-    surface: Surface<'static>,
-    device: Device,
-    queue: Queue,
+    pub(crate) surface: Surface<'static>,
+    pub(crate) device: Device,
+    pub(crate) queue: Queue,
     config: SurfaceConfiguration,
     pub size: PhysicalSize<u32>,
-    window: Window,
-    depth_texture: Texture,
+    pub(crate) depth_texture: Texture,
     pipeline: RenderPipeline,
     bind_group_layout: BindGroupLayout,
-}
-
-pub struct RenderContext {
-    pub output: SurfaceTexture,
-    pub color_view: TextureView,
-    pub depth_view: TextureView,
-    pub encoder: CommandEncoder,
 }
 
 impl State {
@@ -177,7 +169,7 @@ impl State {
         shader
     }
 
-    pub async fn new(window: Window) -> Self {
+    pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
         let size = PhysicalSize {
             height: size.height.max(1),
@@ -200,15 +192,10 @@ impl State {
             queue,
             config,
             size,
-            window,
             depth_texture,
             bind_group_layout,
             pipeline,
         }
-    }
-
-    pub fn window(&self) -> &Window {
-        &self.window
     }
 
     pub fn resize(&mut self, mut new_size: PhysicalSize<u32>) {
@@ -225,38 +212,6 @@ impl State {
         // TODO
     }
 
-    pub fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> 
-    {
-        let output = self.surface.get_current_texture()?;
-        let color_view = output
-            .texture
-            .create_view(&TextureViewDescriptor::default());
-        // let depth_view = self.depth_texture.create_view(&TextureViewDescriptor {
-        //     label: Some("Depth Texture View"),
-        //     format: Some(TextureFormat::Depth32Float),
-        //     dimension: Some(TextureViewDimension::D2),
-        //     aspect: TextureAspect::DepthOnly,
-        //     base_mip_level: 0,
-        //     mip_level_count: None,
-        //     base_array_layer: 0,
-        //     array_layer_count: None,
-        // });
-        let depth_view = self
-            .depth_texture
-            .create_view(&TextureViewDescriptor::default());
-        let encoder = self
-            .device
-            .create_command_encoder(&CommandEncoderDescriptor::default());
-        
-        Ok(RenderContext { output, color_view, depth_view, encoder })
-    }
-    
-    pub fn end_render(&mut self, ctx: RenderContext) {
-        self.queue.submit(Some(ctx.encoder.finish()));
-        ctx.output.present();
-        self.window.request_redraw();
-    }
-    
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
             _ => false,
