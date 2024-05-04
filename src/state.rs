@@ -299,6 +299,7 @@ impl State {
         self.queue.submit(Some(encoder.finish()));
         output.present();
         self.mauz += 1;
+        self.window.request_redraw();
 
         Ok(())
     }

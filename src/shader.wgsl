@@ -3,6 +3,8 @@ struct VOutput {
     @builtin(position) v_pos: vec4<f32>,
 }
 
+@group(0) @binding(0)
+var<uniform> transform: vec3<f32>;
 
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @location(0) in_vpos: vec2<f32>) -> VOutput {
@@ -14,7 +16,7 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32, @location(0) in_vpos: ve
 
     var out: VOutput;
     out.v_color = colors[in_vertex_index];
-    out.v_pos = vec4<f32>(in_vpos, 0.0, 1.0);
+    out.v_pos = vec4<f32>(in_vpos + transform.xy, 0.0, 1.0);
     return out;
 }
 
