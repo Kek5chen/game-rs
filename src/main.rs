@@ -1,5 +1,7 @@
 mod app;
 mod buffer;
+mod drawable;
+mod object;
 mod renderer;
 mod state;
 

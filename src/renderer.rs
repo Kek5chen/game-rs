@@ -1,6 +1,13 @@
-use wgpu::{CommandEncoder, CommandEncoderDescriptor, SurfaceError, SurfaceTexture, TextureView, TextureViewDescriptor};
-use winit::window::Window;
+use crate::object::{Object2D, Object3D};
 use crate::state::State;
+use wgpu::{
+    BindGroupLayout, Color, CommandEncoder, CommandEncoderDescriptor, Id, LoadOp, Operations,
+    RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor,
+    RenderPipeline, ShaderModule, StoreOp, SurfaceError, SurfaceTexture, TextureView,
+    TextureViewDescriptor,
+};
+use winit::window::Window;
+use crate::drawable::Drawable;
 
 pub struct RenderContext {
     pub output: SurfaceTexture,
@@ -11,13 +18,25 @@ pub struct RenderContext {
 pub struct Renderer {
     pub(crate) state: State,
     window: Window,
+    pipelines: Vec<(RenderPipeline, Vec<BindGroupLayout>)>,
+    shaders: Vec<ShaderModule>,
+    pipeline_2d_id: Option<Id<RenderPipeline>>,
+    objects_2d: Vec<Object2D>,
+    pipeline_3d_id: Option<Id<RenderPipeline>>,
+    objects_3d: Vec<Object3D>,
 }
 
 impl Renderer {
     pub(crate) async fn new(window: Window) -> Renderer {
         Renderer {
             state: State::new(&window).await,
-            window
+            window,
+            pipelines: vec![],
+            shaders: vec![],
+            pipeline_2d_id: None,
+            objects_2d: vec![],
+            pipeline_3d_id: None,
+            objects_3d: vec![],
         }
     }
 
@@ -88,5 +107,16 @@ impl Renderer {
         self.state.queue.submit(Some(ctx.encoder.finish()));
         ctx.output.present();
         self.window.request_redraw();
+    }
+
+    pub fn find_pipeline(
+        &self,
+        id: Id<RenderPipeline>
+    ) -> Option<&(RenderPipeline, Vec<BindGroupLayout>)> {
+        self.pipelines.iter().find(|p| id == p.0.global_id())
+    }
+
+    pub fn window(&self) -> &Window {
+        &self.window
     }
 }

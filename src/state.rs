@@ -10,11 +10,9 @@ pub struct State {
     pub(crate) surface: Surface<'static>,
     pub(crate) device: Device,
     pub(crate) queue: Queue,
-    config: SurfaceConfiguration,
-    pub size: PhysicalSize<u32>,
+    pub(crate) config: SurfaceConfiguration,
+    pub(crate) size: PhysicalSize<u32>,
     pub(crate) depth_texture: Texture,
-    pipeline: RenderPipeline,
-    bind_group_layout: BindGroupLayout,
 }
 
 impl State {
@@ -168,8 +166,6 @@ impl State {
         let config = Self::configure_surface(&size, &surface, &adapter, &device);
 
         let depth_texture = Self::setup_depth_texture(&size, &device);
-        let shader = Self::load_shader(&device);
-        let (pipeline, bind_group_layout) = Self::setup_pipeline(&device, &config, &shader);
 
         State {
             surface,
@@ -178,8 +174,6 @@ impl State {
             config,
             size,
             depth_texture,
-            bind_group_layout,
-            pipeline,
         }
     }
 
