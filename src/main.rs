@@ -1,14 +1,21 @@
 mod app;
-mod state;
 mod buffer;
 mod renderer;
+mod state;
 
-use std::error::Error;
 use crate::app::App;
+use env_logger::Env;
+use log::LevelFilter;
+use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+    let log_env = Env::new().filter("RUST_LOG");
+    env_logger::builder()
+        .parse_default_env() // Default env
+        .filter_level(LevelFilter::Info)// Use at least info level
+        .parse_env(log_env) // Or override with whatever env says
+        .init();
 
     App::default().run().await;
 
