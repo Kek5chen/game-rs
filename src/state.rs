@@ -169,7 +169,7 @@ impl State {
     }
 
     fn load_shader(device: &Device) -> ShaderModule {
-        let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
+        let shader = device.create_shader_module(include_wgsl!("shaders/shader.wgsl"));
         println!("Loaded `shader.wgsl`..");
         shader
     }
