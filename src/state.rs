@@ -17,6 +17,7 @@ pub struct State {
     pipeline: wgpu::RenderPipeline,
     bind_group_layout: BindGroupLayout,
     color: wgpu::Color,
+    mauz: u32,
     pub buffer: wgpu::Buffer,
 }
 
@@ -205,6 +206,7 @@ impl State {
             bind_group_layout,
             pipeline,
             buffer,
+            mauz: 0,
             color: wgpu::Color {
                 r: 0.1,
                 g: 0.2,
@@ -248,6 +250,7 @@ impl State {
         //     array_layer_count: None,
         // });
         let depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let vec = [ (self.mauz as f32 / 100.0).sin() * 1.0, (self.mauz as f32 / 100.0).cos() * 1.0, 0.0 ];
         let uniform = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
             contents: bytemuck::cast_slice(&vec),
@@ -291,6 +294,7 @@ impl State {
 
         self.queue.submit(Some(encoder.finish()));
         output.present();
+        self.mauz += 1;
 
         Ok(())
     }
