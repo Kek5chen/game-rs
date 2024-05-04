@@ -1,5 +1,4 @@
 use log::error;
-use wgpu::{Color, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp};
 use crate::renderer::Renderer;
 use winit::dpi::{PhysicalSize, Size};
 use winit::event::{Event, KeyEvent, WindowEvent};
