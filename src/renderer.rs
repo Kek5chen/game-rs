@@ -101,6 +101,13 @@ impl Renderer {
         for o2d in &self.objects_2d {
             o2d.draw(&mut rpass, pipeline, bind_group_layout)
         }
+        
+        let (pipeline, bind_group_layout) =
+            self.find_pipeline(self.pipeline_3d_id.unwrap()).unwrap();
+        rpass.set_pipeline(pipeline);
+        for o3d in &self.objects_3d {
+            o3d.draw(&mut rpass, pipeline, bind_group_layout)
+        }
     }
 
     pub fn end_render(&mut self, ctx: RenderContext) {
