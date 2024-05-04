@@ -1,20 +1,19 @@
 use crate::buffer::TRIANGLE2D;
 use std::mem::size_of_val;
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{include_wgsl, Adapter, Backends, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferAddress, BufferBindingType, BufferUsages, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState, Device, Extent3d, FragmentState, Queue, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderStages, StencilState, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode, BindGroupEntry, BindingResource};
+use wgpu::{include_wgsl, Adapter, Backends, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferAddress, BufferBindingType, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState, Device, Extent3d, FragmentState, Queue, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderStages, StencilState, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode, BindGroupEntry, BindingResource, Color, RenderPass, Texture, SurfaceTexture, TextureView, CommandEncoder, Instance, PowerPreference, RequestAdapterOptions, DeviceDescriptor, SurfaceError, TextureViewDescriptor, CommandEncoderDescriptor, PipelineLayoutDescriptor};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
 pub struct State {
-    surface: wgpu::Surface<'static>,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    config: wgpu::SurfaceConfiguration,
-    pub size: winit::dpi::PhysicalSize<u32>,
+    surface: Surface<'static>,
+    device: Device,
+    queue: Queue,
+    config: SurfaceConfiguration,
+    pub size: PhysicalSize<u32>,
     window: Window,
-    depth_texture: wgpu::Texture,
-    pipeline: wgpu::RenderPipeline,
+    depth_texture: Texture,
+    pipeline: RenderPipeline,
     bind_group_layout: BindGroupLayout,
     color: wgpu::Color,
     mauz: u32,
@@ -22,8 +21,8 @@ pub struct State {
 }
 
 impl State {
-    fn setup_instance() -> wgpu::Instance {
-        let instance = wgpu::Instance::default();
+    fn setup_instance() -> Instance {
+        let instance = Instance::default();
 
         print!("Available Graphics Units: ");
         let backends = instance
@@ -36,21 +35,21 @@ impl State {
 
         instance
     }
-    fn setup_surface(instance: &wgpu::Instance, window: &Window) -> wgpu::Surface<'static> {
+    fn setup_surface(instance: &Instance, window: &Window) -> Surface<'static> {
         let surface = unsafe {
             // We are creating a 'static lifetime out of a local reference
             // VERY UNSAFE: Make absolutely sure `window` lives as long as `surface`
             let surface = instance.create_surface(window).unwrap();
-            std::mem::transmute::<wgpu::Surface, wgpu::Surface<'static>>(surface)
+            std::mem::transmute::<Surface, Surface<'static>>(surface)
         };
 
         surface
     }
 
-    async fn setup_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface<'_>) -> Adapter {
+    async fn setup_adapter(instance: &Instance, surface: &Surface<'_>) -> Adapter {
         let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
+            .request_adapter(&RequestAdapterOptions {
+                power_preference: PowerPreference::HighPerformance,
                 compatible_surface: Some(surface),
                 ..Default::default()
             })
@@ -69,7 +68,7 @@ impl State {
 
     async fn get_device_and_queue(adapter: &Adapter) -> (Device, Queue) {
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default(), None)
+            .request_device(&DeviceDescriptor::default(), None)
             .await
             .unwrap();
         (device, queue)
@@ -88,7 +87,7 @@ impl State {
         config
     }
 
-    fn setup_depth_texture(size: &PhysicalSize<u32>, device: &Device) -> wgpu::Texture {
+    fn setup_depth_texture(size: &PhysicalSize<u32>, device: &Device) -> Texture {
         let depth_texture = device.create_texture(&TextureDescriptor {
             label: Some("Depth Texture"),
             size: Extent3d {
@@ -124,7 +123,7 @@ impl State {
                 count: None,
             }],
         });
-        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("Pipeline Layout"),
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
@@ -240,8 +239,8 @@ impl State {
         let output = self.surface.get_current_texture()?;
         let color_view = output
             .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        // let depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor {
+            .create_view(&TextureViewDescriptor::default());
+        // let depth_view = self.depth_texture.create_view(&TextureViewDescriptor {
         //     label: Some("Depth Texture View"),
         //     format: Some(TextureFormat::Depth32Float),
         //     dimension: Some(TextureViewDimension::D2),
@@ -253,7 +252,6 @@ impl State {
         // });
         let depth_view = self
             .depth_texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
         let vec = [ (self.mauz as f32 / 100.0).sin() * 1.0, (self.mauz as f32 / 100.0).cos() * 1.0, 0.0 ];
         let uniform = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -266,8 +264,8 @@ impl State {
             entries: &[BindGroupEntry { binding: 0, resource: BindingResource::Buffer(uniform.as_entire_buffer_binding()) }],
         });
         let mut encoder = self
+            .create_view(&TextureViewDescriptor::default());
             .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         {
             let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -299,6 +297,7 @@ impl State {
         self.queue.submit(Some(encoder.finish()));
         output.present();
         self.mauz += 1;
+            .create_command_encoder(&CommandEncoderDescriptor::default());
         self.window.request_redraw();
 
         Ok(())
