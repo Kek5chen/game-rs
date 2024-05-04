@@ -48,9 +48,36 @@ impl Renderer {
 
         Ok(RenderContext { output, color_view, depth_view, encoder })
     }
-    
-    pub fn window(&self) -> &Window {
-        &self.window
+
+    pub(crate) fn render(&mut self, ctx: &mut RenderContext) {
+        let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
+            label: Some("Render Pass"),
+            color_attachments: &[Some(RenderPassColorAttachment {
+                view: &ctx.color_view,
+                resolve_target: None,
+                ops: Operations {
+                    load: LoadOp::Clear(Color::BLACK),
+                    store: StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                view: &ctx.depth_view,
+                depth_ops: Some(Operations {
+                    load: LoadOp::Clear(1.0f32),
+                    store: StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
+
+        let (pipeline, bind_group_layout) =
+            self.find_pipeline(self.pipeline_2d_id.unwrap()).unwrap();
+        rpass.set_pipeline(pipeline);
+        for o2d in &self.objects_2d {
+            o2d.draw(&mut rpass, pipeline, bind_group_layout)
+        }
     }
 
     pub fn end_render(&mut self, ctx: RenderContext) {

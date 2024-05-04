@@ -1,5 +1,6 @@
 use log::error;
-use crate::renderer::{RenderContext, Renderer};
+use wgpu::{Color, LoadOp, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp};
+use crate::renderer::Renderer;
 use winit::dpi::{PhysicalSize, Size};
 use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoop;
@@ -55,10 +56,7 @@ impl App {
         event_loop
     }
 
-    pub async fn run<F>(mut self, render: F)
-    where
-        F: Fn(&mut RenderContext) 
-    {
+    pub async fn run(mut self) {
         let event_loop = self.init_state().await;
 
         let renderer = self.renderer.as_mut().unwrap();
@@ -75,7 +73,7 @@ impl App {
                                 renderer.state.update();
                                 match renderer.begin_render() {
                                     Ok(mut ctx) => {
-                                        render(&mut ctx);
+                                        renderer.render(&mut ctx);
                                         renderer.end_render(ctx);
                                     }
                                     Err(wgpu::SurfaceError::Lost) => renderer.state.resize(renderer.state.size),
