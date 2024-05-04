@@ -17,6 +17,13 @@ pub struct State {
     bind_group_layout: BindGroupLayout,
 }
 
+pub struct RenderContext {
+    pub output: SurfaceTexture,
+    pub color_view: TextureView,
+    pub depth_view: TextureView,
+    pub encoder: CommandEncoder,
+}
+
 impl State {
     fn setup_instance() -> Instance {
         let instance = Instance::default();
@@ -218,7 +225,8 @@ impl State {
         // TODO
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    pub fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> 
+    {
         let output = self.surface.get_current_texture()?;
         let color_view = output
             .texture
@@ -235,70 +243,22 @@ impl State {
         // });
         let depth_view = self
             .depth_texture
-        let vec = [ (self.mauz as f32 / 100.0).sin() * 1.0, (self.mauz as f32 / 100.0).cos() * 1.0, 0.0 ];
-        let uniform = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Uniform Buffer"),
-            contents: bytemuck::cast_slice(&vec),
-            usage: BufferUsages::UNIFORM,
-        });
-        let bind_group = self.device.create_bind_group(&BindGroupDescriptor {
-            label: Some("Bind Group"),
-            layout: &self.bind_group_layout,
-            entries: &[BindGroupEntry { binding: 0, resource: BindingResource::Buffer(uniform.as_entire_buffer_binding()) }],
-        });
-        let mut encoder = self
             .create_view(&TextureViewDescriptor::default());
+        let encoder = self
             .device
-        {
-            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &color_view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(self.color),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                    view: &depth_view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(1.0f32),
-                        store: wgpu::StoreOp::Store,
-                    }),
-                    stencil_ops: None,
-                }),
-                occlusion_query_set: None,
-                timestamp_writes: None,
-            });
-            rpass.set_pipeline(&self.pipeline);
-            rpass.set_bind_group(0, &bind_group, &[]);
-            rpass.set_vertex_buffer(0, self.buffer.slice(..));
-            rpass.draw(0..3, 0..1)
-        }
-
-        self.queue.submit(Some(encoder.finish()));
-        output.present();
-        self.mauz += 1;
             .create_command_encoder(&CommandEncoderDescriptor::default());
-        self.window.request_redraw();
-
-        Ok(())
+        
+        Ok(RenderContext { output, color_view, depth_view, encoder })
     }
-
+    
+    pub fn end_render(&mut self, ctx: RenderContext) {
+        self.queue.submit(Some(ctx.encoder.finish()));
+        ctx.output.present();
+        self.window.request_redraw();
+    }
+    
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
-            WindowEvent::CursorMoved { position, .. } => {
-                self.color = wgpu::Color {
-                    r: position.x / self.size.width as f64,
-                    g: position.y / self.size.height as f64,
-                    b: (position.x + 1.0) / 2.0 / self.size.width as f64,
-                    a: 1.0,
-                };
-                println!("mow: {:?}", self.color);
-                self.window.request_redraw();
-                true
-            }
             _ => false,
         }
     }

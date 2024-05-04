@@ -69,8 +69,8 @@ impl App {
                         match event {
                             WindowEvent::RedrawRequested => {
                                 state.update();
-                                match state.render() {
-                                    Ok(_) => {}
+                                match state.begin_render() {
+                                    Ok(ctx) => { state.end_render(ctx); }
                                     Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
                                     Err(wgpu::SurfaceError::OutOfMemory) => window_target.exit(),
                                     Err(e) => eprintln!("{:?}", e),
