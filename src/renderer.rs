@@ -99,7 +99,7 @@ impl Renderer {
             let (pipeline, bind_group_layout) = self.find_pipeline(pipeline_id).unwrap();
             rpass.set_pipeline(pipeline);
             for o2d in &self.objects_2d {
-                o2d.draw(&mut rpass, pipeline, bind_group_layout)
+                o2d.draw(&mut rpass, pipeline, bind_group_layout);
             }
         }
 
@@ -107,7 +107,7 @@ impl Renderer {
             let (pipeline, bind_group_layout) = self.find_pipeline(pipeline_id).unwrap();
             rpass.set_pipeline(pipeline);
             for o3d in &self.objects_3d {
-                o3d.draw(&mut rpass, pipeline, bind_group_layout)
+                o3d.draw(&mut rpass, pipeline, bind_group_layout);
             }
         }
     }
