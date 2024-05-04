@@ -2,10 +2,7 @@ use crate::drawable::Drawable;
 use crate::object::{Object2D, Object3D};
 use crate::state::State;
 use wgpu::{
-    BindGroupLayout, Color, CommandEncoder, CommandEncoderDescriptor, Id, LoadOp, Operations,
-    RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor,
-    RenderPipeline, ShaderModule, StoreOp, SurfaceError, SurfaceTexture, TextureView,
-    TextureViewDescriptor,
+    include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, ShaderModule, StencilState, StoreOp, SurfaceError, SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode
 };
 use winit::window::Window;
 
@@ -19,23 +16,67 @@ pub struct Renderer {
     pub(crate) state: State,
     window: Window,
     pipelines: Vec<(RenderPipeline, Vec<BindGroupLayout>)>,
-    shaders: Vec<ShaderModule>,
-    pipeline_2d_id: Option<Id<RenderPipeline>>,
+    pipeline_2d_id: Id<RenderPipeline>,
+    pipeline_3d_id: Id<RenderPipeline>,
     objects_2d: Vec<Object2D>,
-    pipeline_3d_id: Option<Id<RenderPipeline>>,
     objects_3d: Vec<Object3D>,
 }
 
 impl Renderer {
     pub(crate) async fn new(window: Window) -> Renderer {
+        let state = State::new(&window).await;
+        let pipeline_2d_layout = state.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("2D Render Pipeline"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[]
+        });
+
+        let shader_2d = state.device.create_shader_module(include_wgsl!("shaders/shader2d.wgsl"));
+
+        let pipeline_2d = state.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor { 
+            label: Some("2D Render Pipeline"),
+            layout: Some(&pipeline_2d_layout),
+            vertex: wgpu::VertexState {
+                module: &shader_2d,
+                entry_point: "vs_main",
+                buffers: &[VertexBufferLayout {
+                    step_mode: VertexStepMode::Vertex,
+                    attributes: &[VertexAttribute {
+                        format: VertexFormat::Float32x2,
+                        offset: 0,
+                        shader_location: 0
+                    }],
+                    array_stride: std::mem::size_of::<[f32; 2]>() as u64
+                }],
+            },
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: Some(wgpu::DepthStencilState { 
+                format: TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: CompareFunction::Less,
+                stencil: StencilState::default(),
+                bias: DepthBiasState::default(),
+            }),
+            multisample: MultisampleState::default(),
+            fragment: Some(FragmentState {
+                module: &shader_2d,
+                entry_point: "fs_main",
+                targets: &[Some(ColorTargetState {
+                    blend: None,
+                    format: TextureFormat::Bgra8UnormSrgb,
+                    write_mask: ColorWrites::all(),
+                })]
+            }),
+            multiview: None,
+        });
+
         Renderer {
-            state: State::new(&window).await,
+            state,
             window,
-            pipelines: vec![],
-            shaders: vec![],
-            pipeline_2d_id: None,
+            pipeline_2d_id: pipeline_2d.global_id(),
+            pipeline_3d_id: todo!(),
+            pipelines: vec![ (pipeline_2d, vec![]) ],
             objects_2d: vec![],
-            pipeline_3d_id: None,
             objects_3d: vec![],
         }
     }
@@ -95,16 +136,16 @@ impl Renderer {
             occlusion_query_set: None,
         });
 
-        if let Some(pipeline_id) = self.pipeline_3d_id {
-            let (pipeline, bind_group_layout) = self.find_pipeline(pipeline_id).unwrap();
+        {
+            let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_2d_id).unwrap();
             rpass.set_pipeline(pipeline);
             for o2d in &self.objects_2d {
                 o2d.draw(&mut rpass, pipeline, bind_group_layout);
             }
         }
 
-        if let Some(pipeline_id) = self.pipeline_3d_id {
-            let (pipeline, bind_group_layout) = self.find_pipeline(pipeline_id).unwrap();
+        {
+            let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_3d_id).unwrap();
             rpass.set_pipeline(pipeline);
             for o3d in &self.objects_3d {
                 o3d.draw(&mut rpass, pipeline, bind_group_layout);
