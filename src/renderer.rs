@@ -1,3 +1,4 @@
+use crate::drawable::Drawable;
 use crate::object::{Object2D, Object3D};
 use crate::state::State;
 use wgpu::{
@@ -7,7 +8,6 @@ use wgpu::{
     TextureViewDescriptor,
 };
 use winit::window::Window;
-use crate::drawable::Drawable;
 
 pub struct RenderContext {
     pub output: SurfaceTexture,
@@ -95,18 +95,20 @@ impl Renderer {
             occlusion_query_set: None,
         });
 
-        let (pipeline, bind_group_layout) =
-            self.find_pipeline(self.pipeline_2d_id.unwrap()).unwrap();
-        rpass.set_pipeline(pipeline);
-        for o2d in &self.objects_2d {
-            o2d.draw(&mut rpass, pipeline, bind_group_layout)
+        if let Some(pipeline_id) = self.pipeline_3d_id {
+            let (pipeline, bind_group_layout) = self.find_pipeline(pipeline_id).unwrap();
+            rpass.set_pipeline(pipeline);
+            for o2d in &self.objects_2d {
+                o2d.draw(&mut rpass, pipeline, bind_group_layout)
+            }
         }
-        
-        let (pipeline, bind_group_layout) =
-            self.find_pipeline(self.pipeline_3d_id.unwrap()).unwrap();
-        rpass.set_pipeline(pipeline);
-        for o3d in &self.objects_3d {
-            o3d.draw(&mut rpass, pipeline, bind_group_layout)
+
+        if let Some(pipeline_id) = self.pipeline_3d_id {
+            let (pipeline, bind_group_layout) = self.find_pipeline(pipeline_id).unwrap();
+            rpass.set_pipeline(pipeline);
+            for o3d in &self.objects_3d {
+                o3d.draw(&mut rpass, pipeline, bind_group_layout)
+            }
         }
     }
 
@@ -118,7 +120,7 @@ impl Renderer {
 
     pub fn find_pipeline(
         &self,
-        id: Id<RenderPipeline>
+        id: Id<RenderPipeline>,
     ) -> Option<&(RenderPipeline, Vec<BindGroupLayout>)> {
         self.pipelines.iter().find(|p| id == p.0.global_id())
     }
