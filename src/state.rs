@@ -15,9 +15,6 @@ pub struct State {
     depth_texture: Texture,
     pipeline: RenderPipeline,
     bind_group_layout: BindGroupLayout,
-    color: wgpu::Color,
-    mauz: u32,
-    pub buffer: wgpu::Buffer,
 }
 
 impl State {
@@ -190,12 +187,6 @@ impl State {
         let shader = Self::load_shader(&device);
         let (pipeline, bind_group_layout) = Self::setup_pipeline(&device, &config, &shader);
 
-        let buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Buffer"),
-            usage: BufferUsages::VERTEX,
-            contents: bytemuck::cast_slice(&TRIANGLE2D),
-        });
-
         State {
             surface,
             device,
@@ -206,14 +197,6 @@ impl State {
             depth_texture,
             bind_group_layout,
             pipeline,
-            buffer,
-            mauz: 0,
-            color: wgpu::Color {
-                r: 0.1,
-                g: 0.2,
-                b: 0.3,
-                a: 1.0,
-            },
         }
     }
 
