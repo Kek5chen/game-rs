@@ -1,6 +1,8 @@
+use std::error::Error;
 use log::error;
 use crate::renderer::Renderer;
 use winit::dpi::{PhysicalSize, Size};
+use winit::error::EventLoopError;
 use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::keyboard::{KeyCode, PhysicalKey};
@@ -41,8 +43,11 @@ impl App {
         }
     }
 
-    async fn init_state(&mut self) -> EventLoop<()> {
-        let event_loop = EventLoop::new().unwrap();
+    async fn init_state(&mut self) -> Result<EventLoop<()>, Box<dyn Error>> {
+        let event_loop = match EventLoop::new() {
+            Err(EventLoopError::NotSupported(_)) => return Err("No graphics backend found that could be used.".into()),
+            e => e?
+        };
         let window = self
             .window_builder
             .take()
@@ -52,11 +57,11 @@ impl App {
 
         self.renderer = Some(Renderer::new(window).await);
 
-        event_loop
+        Ok(event_loop)
     }
 
-    pub async fn run(mut self) {
-        let event_loop = self.init_state().await;
+    pub async fn run(mut self) -> Result<(), Box<dyn Error>> {
+        let event_loop = self.init_state().await?;
 
         let renderer = self.renderer.as_mut().unwrap();
         
@@ -95,7 +100,8 @@ impl App {
                     }
                 }
                 _ => {}
-            })
-            .unwrap()
+            })?;
+        
+        Ok(())
     }
 }

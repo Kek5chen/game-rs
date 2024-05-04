@@ -7,7 +7,7 @@ mod state;
 
 use crate::app::App;
 use env_logger::Env;
-use log::LevelFilter;
+use log::{error, LevelFilter};
 use std::error::Error;
 
 #[tokio::main]
@@ -19,7 +19,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .parse_env(log_env) // Or override with whatever env says
         .init();
 
-    App::default().run().await;
+    if let Err(e) = App::default().run().await {
+        error!("{e}")
+    }
 
     Ok(())
 }
