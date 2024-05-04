@@ -1,4 +1,4 @@
-use wgpu::{BindGroup, BindGroupLayout, CommandEncoder, IndexFormat, RenderPass, RenderPipeline};
+use wgpu::{BindGroupLayout, IndexFormat, RenderPass, RenderPipeline};
 
 pub struct ObjectVertexData {
     vertices: wgpu::Buffer,

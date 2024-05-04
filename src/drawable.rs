@@ -1,4 +1,4 @@
-use wgpu::{BindGroupLayout, CommandEncoder, RenderPass, RenderPipeline};
+use wgpu::{BindGroupLayout, RenderPass, RenderPipeline};
 
 pub(crate) trait Drawable {
     fn draw<'a>(
