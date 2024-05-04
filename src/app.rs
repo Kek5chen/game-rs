@@ -1,3 +1,4 @@
+use log::error;
 use crate::renderer::Renderer;
 use winit::dpi::{PhysicalSize, Size};
 use winit::event::{Event, KeyEvent, WindowEvent};
@@ -75,7 +76,7 @@ impl App {
                                     }
                                     Err(wgpu::SurfaceError::Lost) => renderer.state.resize(renderer.state.size),
                                     Err(wgpu::SurfaceError::OutOfMemory) => window_target.exit(),
-                                    Err(e) => eprintln!("{:?}", e),
+                                    Err(e) => error!("{:?}", e),
                                 }
                             }
                             WindowEvent::CloseRequested

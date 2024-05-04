@@ -4,6 +4,7 @@ use wgpu::{include_wgsl, Adapter, Backends, BindGroupLayout, BindGroupLayoutDesc
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
+use log::info;
 
 pub struct State {
     pub(crate) surface: Surface<'static>,
@@ -19,16 +20,6 @@ pub struct State {
 impl State {
     fn setup_instance() -> Instance {
         let instance = Instance::default();
-
-        print!("Available Graphics Units: ");
-        let backends = instance
-            .enumerate_adapters(Backends::all())
-            .iter()
-            .map(|a| format!("{} ({})", a.get_info().name, a.get_info().backend.to_str()))
-            .collect::<Vec<String>>()
-            .join(", ");
-        println!("{}", backends);
-
         instance
     }
     fn setup_surface(instance: &Instance, window: &Window) -> Surface<'static> {
@@ -53,12 +44,6 @@ impl State {
             .expect(
                 "Couldn't find anything that supports rendering stuff. How are you reading this..?",
             );
-
-        println!(
-            "Using: {} through {}",
-            adapter.get_info().name,
-            adapter.get_info().backend.to_str()
-        );
         adapter
     }
 
@@ -165,7 +150,7 @@ impl State {
 
     fn load_shader(device: &Device) -> ShaderModule {
         let shader = device.create_shader_module(include_wgsl!("shaders/shader.wgsl"));
-        println!("Loaded `shader.wgsl`..");
+        info!("Loaded `shader.wgsl`..");
         shader
     }
 
