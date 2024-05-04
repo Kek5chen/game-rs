@@ -1,4 +1,4 @@
-use crate::buffer::{TRIANGLE, TRIANGLE2D};
+use crate::buffer::TRIANGLE2D;
 use std::mem::size_of_val;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{include_wgsl, Adapter, Backends, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferAddress, BufferBindingType, BufferUsages, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState, Device, Extent3d, FragmentState, Queue, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderStages, StencilState, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode, BindGroupEntry, BindingResource};
@@ -92,14 +92,16 @@ impl State {
         let depth_texture = device.create_texture(&TextureDescriptor {
             label: Some("Depth Texture"),
             size: Extent3d {
-                width: size.width, height: size.height, depth_or_array_layers: 1
+                width: size.width,
+                height: size.height,
+                depth_or_array_layers: 1,
             },
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
             format: TextureFormat::Depth32Float,
             usage: TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[TextureFormat::Depth32Float]
+            view_formats: &[TextureFormat::Depth32Float],
         });
         depth_texture
     }
@@ -249,7 +251,9 @@ impl State {
         //     base_array_layer: 0,
         //     array_layer_count: None,
         // });
-        let depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let depth_view = self
+            .depth_texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
         let vec = [ (self.mauz as f32 / 100.0).sin() * 1.0, (self.mauz as f32 / 100.0).cos() * 1.0, 0.0 ];
         let uniform = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
