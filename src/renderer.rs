@@ -2,9 +2,15 @@ use crate::drawable::Drawable;
 use crate::object::{Object2D, Object3D};
 use crate::state::State;
 use wgpu::{
-    include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, ShaderModule, StencilState, StoreOp, SurfaceError, SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode
+    include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder,
+    CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp,
+    MultisampleState, Operations, PipelineLayout, RenderPassColorAttachment,
+    RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, ShaderModule,
+    StencilState, StoreOp, SurfaceError, SurfaceTexture, TextureFormat, TextureView,
+    TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode,
 };
 use winit::window::Window;
+use crate::buffer::CUBE;
 
 pub struct RenderContext {
     pub output: SurfaceTexture,
@@ -23,59 +29,128 @@ pub struct Renderer {
 }
 
 impl Renderer {
+    fn make_2d_pipeline(state: &State) -> (PipelineLayout, RenderPipeline) {
+        let pipeline_2d_layout =
+            state
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("2D Render Pipeline"),
+                    bind_group_layouts: &[],
+                    push_constant_ranges: &[],
+                });
+
+        let shader_2d = state
+            .device
+            .create_shader_module(include_wgsl!("shaders/shader2d.wgsl"));
+
+        let pipeline_2d = state
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("2D Render Pipeline"),
+                layout: Some(&pipeline_2d_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader_2d,
+                    entry_point: "vs_main",
+                    buffers: &[VertexBufferLayout {
+                        step_mode: VertexStepMode::Vertex,
+                        attributes: &[VertexAttribute {
+                            format: VertexFormat::Float32x2,
+                            offset: 0,
+                            shader_location: 0,
+                        }],
+                        array_stride: std::mem::size_of::<[f32; 2]>() as u64,
+                    }],
+                },
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: TextureFormat::Depth32Float,
+                    depth_write_enabled: true,
+                    depth_compare: CompareFunction::Less,
+                    stencil: StencilState::default(),
+                    bias: DepthBiasState::default(),
+                }),
+                multisample: MultisampleState::default(),
+                fragment: Some(FragmentState {
+                    module: &shader_2d,
+                    entry_point: "fs_main",
+                    targets: &[Some(ColorTargetState {
+                        blend: None,
+                        format: TextureFormat::Bgra8UnormSrgb,
+                        write_mask: ColorWrites::all(),
+                    })],
+                }),
+                multiview: None,
+            });
+
+        (pipeline_2d_layout, pipeline_2d)
+    }
+
+    fn make_3d_pipeline(state: &State) -> (PipelineLayout, RenderPipeline) {
+        let pipeline_3d_layout =
+            state
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("3D Render Pipeline"),
+                    bind_group_layouts: &[],
+                    push_constant_ranges: &[],
+                });
+
+        let shader_3d = state
+            .device
+            .create_shader_module(include_wgsl!("shaders/shader3d.wgsl"));
+
+        let pipeline_3d = state
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("3D Render Pipeline"),
+                layout: Some(&pipeline_3d_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader_3d,
+                    entry_point: "vs_main",
+                    buffers: &[VertexBufferLayout {
+                        step_mode: VertexStepMode::Vertex,
+                        attributes: &[VertexAttribute {
+                            format: VertexFormat::Float32x2,
+                            offset: 0,
+                            shader_location: 0,
+                        }],
+                        array_stride: std::mem::size_of::<[f32; 3]>() as u64,
+                    }],
+                },
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: TextureFormat::Depth32Float,
+                    depth_write_enabled: true,
+                    depth_compare: CompareFunction::Less,
+                    stencil: StencilState::default(),
+                    bias: DepthBiasState::default(),
+                }),
+                multisample: MultisampleState::default(),
+                fragment: Some(FragmentState {
+                    module: &shader_3d,
+                    entry_point: "fs_main",
+                    targets: &[Some(ColorTargetState {
+                        blend: None,
+                        format: TextureFormat::Bgra8UnormSrgb,
+                        write_mask: ColorWrites::all(),
+                    })],
+                }),
+                multiview: None,
+            });
+
+        (pipeline_3d_layout, pipeline_3d)
+    }
     pub(crate) async fn new(window: Window) -> Renderer {
         let state = State::new(&window).await;
-        let pipeline_2d_layout = state.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("2D Render Pipeline"),
-            bind_group_layouts: &[],
-            push_constant_ranges: &[]
-        });
 
-        let shader_2d = state.device.create_shader_module(include_wgsl!("shaders/shader2d.wgsl"));
-
-        let pipeline_2d = state.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor { 
-            label: Some("2D Render Pipeline"),
-            layout: Some(&pipeline_2d_layout),
-            vertex: wgpu::VertexState {
-                module: &shader_2d,
-                entry_point: "vs_main",
-                buffers: &[VertexBufferLayout {
-                    step_mode: VertexStepMode::Vertex,
-                    attributes: &[VertexAttribute {
-                        format: VertexFormat::Float32x2,
-                        offset: 0,
-                        shader_location: 0
-                    }],
-                    array_stride: std::mem::size_of::<[f32; 2]>() as u64
-                }],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(wgpu::DepthStencilState { 
-                format: TextureFormat::Depth32Float,
-                depth_write_enabled: true,
-                depth_compare: CompareFunction::Less,
-                stencil: StencilState::default(),
-                bias: DepthBiasState::default(),
-            }),
-            multisample: MultisampleState::default(),
-            fragment: Some(FragmentState {
-                module: &shader_2d,
-                entry_point: "fs_main",
-                targets: &[Some(ColorTargetState {
-                    blend: None,
-                    format: TextureFormat::Bgra8UnormSrgb,
-                    write_mask: ColorWrites::all(),
-                })]
-            }),
-            multiview: None,
-        });
-
+        let (pipeline_2d_layout, pipeline_2d) = Self::make_2d_pipeline(&state);
+        let (pipeline_3d_layout, pipeline_3d) = Self::make_3d_pipeline(&state);
         Renderer {
             state,
             window,
             pipeline_2d_id: pipeline_2d.global_id(),
-            pipeline_3d_id: todo!(),
-            pipelines: vec![ (pipeline_2d, vec![]) ],
+            pipeline_3d_id: pipeline_3d.global_id(),
+            pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![])],
             objects_2d: vec![],
             objects_3d: vec![],
         }
