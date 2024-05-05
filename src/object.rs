@@ -1,5 +1,7 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Vector2, Vector3};
+use cgmath::Vector2;
 use wgpu::{BindGroupLayout, BufferUsages, Device, IndexFormat, RenderPass, RenderPipeline};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
@@ -88,5 +90,16 @@ impl Object3D {
                 indices: indices.unwrap_or_default(),
             },
         }
+    }
+}
+
+pub struct GameObject<'parent> {
+    pub name: &'parent str,
+    pub children: Vec<Rc<RefCell<GameObject<'parent>>>>,
+}
+
+impl<'parent> GameObject<'parent> {
+    pub fn add_child(&mut self, child: Rc<RefCell<GameObject<'parent>>>) {
+        self.children.push(child)
     }
 }

@@ -4,11 +4,13 @@ mod drawable;
 mod object;
 mod renderer;
 mod state;
+mod world;
 
 use crate::app::App;
 use env_logger::Env;
 use log::{error, LevelFilter};
 use std::error::Error;
+use crate::world::World;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -18,8 +20,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .filter_level(LevelFilter::Info) // Use at least info level
         .parse_env(log_env) // Or override with whatever env says
         .init();
+    
+    let mut world = World::new();
+    let obj1 = world.new_object("Mow");
+    let obj2 = world.new_object("Meoow");
+    
+    obj1.borrow_mut().add_child(obj2);
+    world.add_child(obj1);
 
-    if let Err(e) = App::new("game-rs", 800, 600).run().await {
+    let app = App::new("game-rs", 800, 600);
+    if let Err(e) = app.run().await {
         error!("{e}")
     }
 
