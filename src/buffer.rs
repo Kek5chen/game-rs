@@ -1,24 +1,52 @@
-pub const TRIANGLE2D: [[f32; 2]; 3] = [
-    [ 0.0, 1.0 ],
-    [ 1.0, -1.0 ],
-    [ -1.0, -1.0 ]
-];
-pub const TRIANGLE: [[f32; 3]; 3] = [ 
-    [ 0.5, 0.0, 0.0 ],
-    [ 1.0, 1.0, 0.0 ],
-    [ 0.0, 1.0, 0.0 ]
+use crate::object::{Vertex2D, Vertex3D};
+
+macro_rules! v3 {
+    ($x:expr, $y:expr, $z: expr) => {
+        Vertex3D {
+            position: cgmath::Vector3 {
+                x: $x,
+                y: $y,
+                z: $z,
+            }
+        }
+    };
+}
+
+macro_rules! v2 {
+    ($x:expr, $y:expr) => {
+        Vertex2D {
+            position: cgmath::Vector2 {
+                x: $x,
+                y: $y,
+            }
+        }
+    };
+}
+
+#[rustfmt::skip]
+pub const TRIANGLE2D: [Vertex2D; 3] = [
+    v2!(0.0, 1.0),
+    v2!(1.0, -1.0),
+    v2!(-1.0, -1.0)
 ];
 
-pub const CUBE: [[f32; 3]; 8] = [
-    [ -0.5, 0.5, 0.5 ],
-    [ -0.5, 0.5, -0.5 ],
-    [ -0.5, -0.5, 0.5 ],
-    [ -0.5, -0.5, -0.5 ],
+#[rustfmt::skip]
+pub const TRIANGLE: [Vertex3D; 3] = [
+    v3!(0.5, 0.0, 0.0),
+    v3!(1.0, 1.0, 0.0),
+    v3!(0.0, 1.0, 0.0)
+];
 
-    [ 0.5, 0.5, 0.5 ],
-    [ 0.5, 0.5, -0.5 ],
-    [ 0.5, -0.5, 0.5 ],
-    [ 0.5, -0.5, -0.5 ],
+pub const CUBE: [Vertex3D; 8] = [
+    v3!(-0.5, 0.5, 0.5),
+    v3!(-0.5, 0.5, -0.5),
+    v3!(-0.5, -0.5, 0.5),
+    v3!(-0.5, -0.5, -0.5),
+    
+    v3!(0.5, 0.5, 0.5),
+    v3!(0.5, 0.5, -0.5),
+    v3!(0.5, -0.5, 0.5),
+    v3!(0.5, -0.5, -0.5),
 ];
 
 pub const CUBE_INDICES: [u32; 6 * 6] = [
