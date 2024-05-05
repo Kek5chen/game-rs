@@ -37,6 +37,7 @@ pub const TRIANGLE: [Vertex3D; 3] = [
     v3!(0.0, 1.0, 0.0)
 ];
 
+#[rustfmt::skip]
 pub const CUBE: [Vertex3D; 8] = [
     v3!(-0.5, 0.5, 0.5),
     v3!(-0.5, 0.5, -0.5),
@@ -49,6 +50,7 @@ pub const CUBE: [Vertex3D; 8] = [
     v3!(0.5, -0.5, -0.5),
 ];
 
+#[rustfmt::skip]
 pub const CUBE_INDICES: [u32; 6 * 6] = [
     1, 2, 3,
     2, 3, 4,
