@@ -39,6 +39,7 @@ impl crate::drawable::Drawable for Object2D {
 #[derive(Copy, Clone)]
 pub struct Vertex3D {
     pub position: Vector3<f32>,
+    pub color: Vector3<f32>,
 }
 
 unsafe impl Zeroable for Vertex3D {}

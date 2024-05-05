@@ -109,12 +109,19 @@ impl Renderer {
                     entry_point: "vs_main",
                     buffers: &[VertexBufferLayout {
                         step_mode: VertexStepMode::Vertex,
-                        attributes: &[VertexAttribute {
-                            format: VertexFormat::Float32x2,
-                            offset: 0,
-                            shader_location: 0,
-                        }],
-                        array_stride: std::mem::size_of::<[f32; 3]>() as u64,
+                        attributes: &[
+                            VertexAttribute {
+                                format: VertexFormat::Float32x3,
+                                offset: 0,
+                                shader_location: 0,
+                            },
+                            VertexAttribute {
+                                format: VertexFormat::Float32x3,
+                                offset: std::mem::size_of::<Vector3<f32>>() as u64,
+                                shader_location: 1,
+                            },
+                        ],
+                        array_stride: std::mem::size_of::<Vertex3D>() as u64,
                     }],
                 },
                 primitive: wgpu::PrimitiveState::default(),
