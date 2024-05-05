@@ -1,9 +1,18 @@
-use cgmath::Vector3;
 use crate::buffer::{CUBE, CUBE_INDICES};
 use crate::drawable::Drawable;
 use crate::object::{Object2D, Object3D, Vertex2D, Vertex3D};
 use crate::state::State;
-use wgpu::{include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations, PipelineLayout, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, StencilState, StoreOp, SurfaceError, SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
+use crate::world::World;
+use cgmath::Vector3;
+use log::error;
+use wgpu::{
+    include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder,
+    CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp,
+    MultisampleState, Operations, PipelineLayout, RenderPassColorAttachment,
+    RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, StencilState, StoreOp,
+    SurfaceError, SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor,
+    VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode,
+};
 use winit::window::Window;
 
 pub struct RenderContext {
@@ -18,8 +27,6 @@ pub struct Renderer {
     pipelines: Vec<(RenderPipeline, Vec<BindGroupLayout>)>,
     pipeline_2d_id: Id<RenderPipeline>,
     pipeline_3d_id: Id<RenderPipeline>,
-    objects_2d: Vec<Object2D>,
-    objects_3d: Vec<Object3D>,
 }
 
 impl Renderer {
@@ -156,17 +163,40 @@ impl Renderer {
             pipeline_2d_id: pipeline_2d.global_id(),
             pipeline_3d_id: pipeline_3d.global_id(),
             pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![])],
-            objects_2d: vec![],
-            objects_3d: vec![Object3D::new(
-                &state.device,
-                CUBE.to_vec(),
-                Some(CUBE_INDICES.to_vec()),
-            )],
             state,
         }
     }
 
-    pub fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> {
+    pub fn render_world(&mut self, world: &mut World) -> bool {
+        let ctx = match self.begin_render() {
+            Ok(ctx) => Some(ctx),
+            Err(SurfaceError::Lost) => {
+                self.state.resize(self.state.size);
+                None
+            }
+            Err(SurfaceError::OutOfMemory) => {
+                error!("The application ran out of memory");
+                None
+            }
+            Err(e) => {
+                error!("{:?}", e);
+                None
+            }
+        };
+
+        if ctx.is_none() {
+            return false;
+        }
+        
+        let mut ctx = ctx.unwrap();
+
+        self.render(&mut ctx, world);
+        self.end_render(ctx);
+
+        true
+    }
+
+    fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> {
         let output = self.state.surface.get_current_texture()?;
         let color_view = output
             .texture
@@ -198,7 +228,7 @@ impl Renderer {
         })
     }
 
-    pub(crate) fn render(&mut self, ctx: &mut RenderContext) {
+    fn render(&mut self, ctx: &mut RenderContext, world: &mut World) {
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(RenderPassColorAttachment {
@@ -224,21 +254,23 @@ impl Renderer {
         {
             let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_2d_id).unwrap();
             rpass.set_pipeline(pipeline);
-            for o2d in &self.objects_2d {
-                o2d.draw(&mut rpass, pipeline, bind_group_layout);
+            for obj in &world.objects {
+                let mut obj = obj.borrow_mut();
+                if obj.drawable.is_none() {
+                    continue;
+                }
+                let drawable = obj.drawable.as_mut().unwrap();
+                drawable.draw(&mut rpass, pipeline, bind_group_layout);
             }
         }
 
         {
             let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_3d_id).unwrap();
             rpass.set_pipeline(pipeline);
-            for o3d in &self.objects_3d {
-                o3d.draw(&mut rpass, pipeline, bind_group_layout);
-            }
         }
     }
 
-    pub fn end_render(&mut self, ctx: RenderContext) {
+    fn end_render(&mut self, ctx: RenderContext) {
         self.state.queue.submit(Some(ctx.encoder.finish()));
         ctx.output.present();
         self.window.request_redraw();

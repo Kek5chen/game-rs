@@ -1,6 +1,6 @@
-use std::error::Error;
-use log::error;
 use crate::renderer::Renderer;
+use crate::world::World;
+use std::error::Error;
 use winit::dpi::{PhysicalSize, Size};
 use winit::error::EventLoopError;
 use winit::event::{Event, KeyEvent, WindowEvent};
@@ -62,48 +62,41 @@ impl App {
         Ok(event_loop)
     }
 
-    pub async fn run(mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn run<'a>(mut self, world: &mut World<'a>) -> Result<(), Box<dyn Error>> {
         let event_loop = self.init_state().await?;
 
         let renderer = self.renderer.as_mut().unwrap();
-        
-        event_loop
-            .run(move |event, window_target| match event {
-                Event::WindowEvent {
-                    ref event,
-                    window_id,
-                } if window_id == renderer.window().id() => {
-                    if !renderer.state.input(event) {
-                        match event {
-                            WindowEvent::RedrawRequested => {
-                                renderer.state.update();
-                                match renderer.begin_render() {
-                                    Ok(mut ctx) => {
-                                        renderer.render(&mut ctx);
-                                        renderer.end_render(ctx);
-                                    }
-                                    Err(wgpu::SurfaceError::Lost) => renderer.state.resize(renderer.state.size),
-                                    Err(wgpu::SurfaceError::OutOfMemory) => window_target.exit(),
-                                    Err(e) => error!("{:?}", e),
-                                }
+
+        event_loop.run(move |event, window_target| match event {
+            Event::WindowEvent {
+                ref event,
+                window_id,
+            } if window_id == renderer.window().id() => {
+                if !renderer.state.input(event) {
+                    match event {
+                        WindowEvent::RedrawRequested => {
+                            renderer.state.update();
+                            if !renderer.render_world(world) {
+                                window_target.exit();
                             }
-                            WindowEvent::CloseRequested
-                            | WindowEvent::KeyboardInput {
-                                event:
-                                    KeyEvent {
-                                        physical_key: PhysicalKey::Code(KeyCode::Escape),
-                                        ..
-                                    },
-                                ..
-                            } => window_target.exit(),
-                            WindowEvent::Resized(size) => renderer.state.resize(*size),
-                            _ => {}
                         }
+                        WindowEvent::CloseRequested
+                        | WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    physical_key: PhysicalKey::Code(KeyCode::Escape),
+                                    ..
+                                },
+                            ..
+                        } => window_target.exit(),
+                        WindowEvent::Resized(size) => renderer.state.resize(*size),
+                        _ => {}
                     }
                 }
-                _ => {}
-            })?;
-        
+            }
+            _ => {}
+        })?;
+
         Ok(())
     }
 }
