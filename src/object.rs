@@ -38,8 +38,9 @@ impl crate::drawable::Drawable for Object2D {
 
 #[derive(Copy, Clone)]
 pub struct Vertex3D {
-    pub position: Vector3<f32>,
-    pub color: Vector3<f32>,
+    pub position: [f32; 3],
+    pub color: [f32; 3], 
+    pub normal: [f32; 3],
 }
 
 unsafe impl Zeroable for Vertex3D {}
@@ -84,7 +85,7 @@ impl Object3D {
                 vertices_buf: v_buffer,
                 vertices,
                 indices_buf: i_buffer,
-                indices: indices.unwrap_or_else(|| vec![]),
+                indices: indices.unwrap_or_default(),
             },
         }
     }

@@ -1,6 +1,7 @@
 struct VInput {
     @location(0) vpos: vec3<f32>,
     @location(1) vcol: vec3<f32>,
+    @location(2) vnorm: vec3<f32>,
 }
 
 struct VOutput {
