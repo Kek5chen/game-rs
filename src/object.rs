@@ -59,3 +59,26 @@ impl crate::drawable::Drawable for Object3D {
         todo!()
     }
 }
+
+impl Object3D {
+    pub fn new(device: &Device, vertices: Vec<Vertex3D>, indices: Option<Vec<u32>>) -> Object3D {
+        let v_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("3D Object Vertex Buffer"),
+            contents: bytemuck::cast_slice(vertices.as_slice()),
+            usage: BufferUsages::VERTEX,
+        });
+        let i_buffer = indices.as_ref().map(|vec| device.create_buffer_init(&BufferInitDescriptor {
+                label: Some("3D Object Index Buffer"),
+                contents: bytemuck::cast_slice(vec.as_slice()),
+                usage: BufferUsages::INDEX,
+            }));
+        Object3D {
+            data: ObjectVertexData {
+                vertices_buf: v_buffer,
+                vertices,
+                indices_buf: i_buffer,
+                indices: indices.unwrap_or_else(|| vec![]),
+            },
+        }
+    }
+}
