@@ -50,9 +50,9 @@ pub struct Object3D {
 }
 
 impl crate::drawable::Drawable for Object3D {
-    fn draw(
-        &self,
-        rpass: &mut RenderPass,
+    fn draw<'a>(
+        &'a self,
+        rpass: &mut RenderPass<'a>,
         pipeline: &RenderPipeline,
         bind_group: &Vec<BindGroupLayout>,
     ) {
