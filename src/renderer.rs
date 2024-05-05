@@ -10,7 +10,7 @@ use wgpu::{
     TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode,
 };
 use winit::window::Window;
-use crate::buffer::CUBE;
+use crate::buffer::{CUBE, CUBE_INDICES};
 
 pub struct RenderContext {
     pub output: SurfaceTexture,
@@ -146,13 +146,13 @@ impl Renderer {
         let (pipeline_2d_layout, pipeline_2d) = Self::make_2d_pipeline(&state);
         let (pipeline_3d_layout, pipeline_3d) = Self::make_3d_pipeline(&state);
         Renderer {
-            state,
             window,
             pipeline_2d_id: pipeline_2d.global_id(),
             pipeline_3d_id: pipeline_3d.global_id(),
             pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![])],
             objects_2d: vec![],
-            objects_3d: vec![],
+            objects_3d: vec![Object3D::new(&state.device, CUBE.to_vec(), Some(CUBE_INDICES.to_vec()))],
+            state,
         }
     }
 
