@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .parse_env(log_env) // Or override with whatever env says
         .init();
 
-    if let Err(e) = App::default().run().await {
+    if let Err(e) = App::new("game-rs", 800, 600).run().await {
         error!("{e}")
     }
 
