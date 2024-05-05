@@ -45,8 +45,10 @@ impl App {
 
     async fn init_state(&mut self) -> Result<EventLoop<()>, Box<dyn Error>> {
         let event_loop = match EventLoop::new() {
-            Err(EventLoopError::NotSupported(_)) => return Err("No graphics backend found that could be used.".into()),
-            e => e?
+            Err(EventLoopError::NotSupported(_)) => {
+                return Err("No graphics backend found that could be used.".into())
+            }
+            e => e?,
         };
         let window = self
             .window_builder
