@@ -56,7 +56,13 @@ impl crate::drawable::Drawable for Object3D {
         pipeline: &RenderPipeline,
         bind_group: &Vec<BindGroupLayout>,
     ) {
-        todo!()
+        rpass.set_vertex_buffer(0, self.data.vertices_buf.slice(..));
+        if let Some(indices) = self.data.indices_buf.as_ref() {
+            rpass.set_index_buffer(indices.slice(..), IndexFormat::Uint32);
+            rpass.draw_indexed(0..self.data.indices.len() as u32, 0, 0..1);
+        } else {
+            rpass.draw(0..self.data.vertices.len() as u32, 0..1)
+        }
     }
 }
 
