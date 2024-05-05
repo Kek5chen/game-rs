@@ -1,16 +1,10 @@
-use crate::drawable::Drawable;
-use crate::object::{Object2D, Object3D};
-use crate::state::State;
-use wgpu::{
-    include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder,
-    CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp,
-    MultisampleState, Operations, PipelineLayout, RenderPassColorAttachment,
-    RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, ShaderModule,
-    StencilState, StoreOp, SurfaceError, SurfaceTexture, TextureFormat, TextureView,
-    TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode,
-};
-use winit::window::Window;
+use cgmath::Vector3;
 use crate::buffer::{CUBE, CUBE_INDICES};
+use crate::drawable::Drawable;
+use crate::object::{Object2D, Object3D, Vertex2D, Vertex3D};
+use crate::state::State;
+use wgpu::{include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations, PipelineLayout, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, StencilState, StoreOp, SurfaceError, SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
+use winit::window::Window;
 
 pub struct RenderContext {
     pub output: SurfaceTexture,
@@ -58,7 +52,7 @@ impl Renderer {
                             offset: 0,
                             shader_location: 0,
                         }],
-                        array_stride: std::mem::size_of::<[f32; 2]>() as u64,
+                        array_stride: std::mem::size_of::<Vertex2D>() as u64,
                     }],
                 },
                 primitive: wgpu::PrimitiveState::default(),
@@ -158,7 +152,11 @@ impl Renderer {
             pipeline_3d_id: pipeline_3d.global_id(),
             pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![])],
             objects_2d: vec![],
-            objects_3d: vec![Object3D::new(&state.device, CUBE.to_vec(), Some(CUBE_INDICES.to_vec()))],
+            objects_3d: vec![Object3D::new(
+                &state.device,
+                CUBE.to_vec(),
+                Some(CUBE_INDICES.to_vec()),
+            )],
             state,
         }
     }
