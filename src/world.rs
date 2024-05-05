@@ -1,9 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use crate::components::TransformComp;
 use crate::object::GameObject;
 
 pub struct World<'world> {
-    objects: Vec<Rc<RefCell<GameObject<'world>>>>,
+    pub objects: Vec<Rc<RefCell<GameObject<'world>>>>,
     children: Vec<Rc<RefCell<GameObject<'world>>>>,
 }
 
@@ -19,6 +20,8 @@ impl<'world> World<'world> {
         let obj = GameObject {
             name,
             children: vec![],
+            transform: TransformComp::default(),
+            drawable: None
         };
         
         self.objects.push(Rc::new(RefCell::new(obj)));
