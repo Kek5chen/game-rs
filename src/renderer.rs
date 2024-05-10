@@ -230,7 +230,7 @@ impl Renderer {
     }
 
     fn render(&mut self, ctx: &mut RenderContext, world: &mut World) {
-        let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_2d_id).unwrap();
+        let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_3d_id).unwrap();
         let obj_rcs: Vec<RefMut<GameObject>> =
             world.objects.iter().map(|obj| obj.borrow_mut()).collect();
         let drawable_rcs = obj_rcs
