@@ -67,6 +67,12 @@ impl App {
 
         let renderer = self.renderer.as_mut().unwrap();
 
+        for obj in &mut world.objects {
+            if let Some(ref mut drawable) = obj.borrow_mut().drawable {
+                drawable.setup(&renderer.state.device)
+            }
+        }
+
         event_loop.run(move |event, window_target| match event {
             Event::WindowEvent {
                 ref event,
