@@ -1,4 +1,3 @@
-use wgpu::VertexStepMode::Vertex;
 use crate::object::{Vertex2D, Vertex3D};
 
 macro_rules! v3 {
@@ -6,7 +5,7 @@ macro_rules! v3 {
         Vertex3D {
             position: cgmath::vec3($x, $y, $z),
             color: cgmath::vec3($r, $g, $b),
-            normal: cgmath::vec3($nx, $ny, $nz)
+            normal: cgmath::vec3($nx, $ny, $nz),
         }
     };
 }
@@ -14,10 +13,7 @@ macro_rules! v3 {
 macro_rules! v2 {
     ($x:expr, $y:expr) => {
         Vertex2D {
-            position: cgmath::Vector2 {
-                x: $x,
-                y: $y,
-            }
+            position: cgmath::Vector2 { x: $x, y: $y },
         }
     };
 }

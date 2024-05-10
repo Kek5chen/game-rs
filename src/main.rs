@@ -8,12 +8,12 @@ mod state;
 mod world;
 
 use crate::app::App;
+use crate::buffer::{CUBE, CUBE_INDICES};
 use crate::object::Object3D;
 use crate::world::World;
 use env_logger::Env;
 use log::{error, LevelFilter};
 use std::error::Error;
-use crate::buffer::{CUBE, CUBE_INDICES};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -28,7 +28,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let obj1 = world.new_object("Mow");
     let obj2 = world.new_object("Meoow");
 
-    obj2.borrow_mut().set_drawable(Some(Box::new(Object3D::new(CUBE.to_vec(), Some(CUBE_INDICES.to_vec())))));
+    obj2.borrow_mut().set_drawable(Some(Box::new(Object3D::new(
+        CUBE.to_vec(),
+        Some(CUBE_INDICES.to_vec()),
+    ))));
     obj1.borrow_mut().add_child(obj2);
     world.add_child(obj1);
 

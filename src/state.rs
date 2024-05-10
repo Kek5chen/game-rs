@@ -1,10 +1,21 @@
 use crate::buffer::TRIANGLE2D;
+use log::info;
 use std::mem::size_of_val;
-use wgpu::{include_wgsl, Adapter, Backends, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BufferAddress, BufferBindingType, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState, Device, Extent3d, FragmentState, Queue, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderStages, StencilState, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode, BindGroupEntry, BindingResource, Color, RenderPass, Texture, SurfaceTexture, TextureView, CommandEncoder, Instance, PowerPreference, RequestAdapterOptions, DeviceDescriptor, SurfaceError, TextureViewDescriptor, CommandEncoderDescriptor, PipelineLayoutDescriptor};
+use wgpu::{
+    include_wgsl, Adapter, Backends, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BindingResource, BindingType, BufferAddress, BufferBindingType, Color,
+    ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction,
+    DepthBiasState, DepthStencilState, Device, DeviceDescriptor, Extent3d, FragmentState, Instance,
+    PipelineLayoutDescriptor, PowerPreference, Queue, RenderPass, RenderPassDepthStencilAttachment,
+    RenderPipeline, RenderPipelineDescriptor, RequestAdapterOptions, ShaderModule, ShaderStages,
+    StencilState, Surface, SurfaceConfiguration, SurfaceError, SurfaceTexture, Texture,
+    TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView,
+    TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState,
+    VertexStepMode,
+};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
-use log::info;
 
 pub struct State {
     pub(crate) surface: Surface<'static>,

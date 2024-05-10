@@ -1,5 +1,5 @@
-use cgmath::{Vector3, Zero};
 use crate::components::Component;
+use cgmath::{Vector3, Zero};
 
 pub struct TransformComp {
     pub pos: Vector3<f32>,
@@ -14,7 +14,7 @@ impl Default for TransformComp {
         TransformComp {
             pos: Vector3::zero(),
             rot: Vector3::zero(),
-            scale: Vector3::zero()
+            scale: Vector3::zero(),
         }
     }
 }

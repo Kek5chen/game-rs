@@ -187,7 +187,7 @@ impl Renderer {
         if ctx.is_none() {
             return false;
         }
-        
+
         let mut ctx = ctx.unwrap();
 
         self.render(&mut ctx, world);
