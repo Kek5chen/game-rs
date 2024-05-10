@@ -1,4 +1,4 @@
-use crate::components::{Component, TransformComp};
+use crate::components::TransformComp;
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
 use cgmath::Vector2;
@@ -32,24 +32,6 @@ pub struct Object2D {
 }
 
 impl Drawable for Object2D {
-    fn draw<'a>(
-        &'a self,
-        rpass: &mut RenderPass<'a>,
-        pipeline: &RenderPipeline,
-        bind_group: &Vec<BindGroupLayout>,
-    ) {
-        let runtime_data = self
-            .runtime_data
-            .as_ref()
-            .expect("Runtime data should have been setup before calling draw on an object.");
-        rpass.set_vertex_buffer(0, runtime_data.vertices_buf.slice(..));
-        if let Some(indices) = runtime_data.indices_buf.as_ref() {
-            rpass.set_index_buffer(indices.slice(..), IndexFormat::Uint32);
-        } else {
-            rpass.draw(0..self.data.vertices.len() as u32, 0..1)
-        }
-    }
-
     fn setup(&mut self, device: &Device) {
         let v_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("3D Object Vertex Buffer"),
@@ -69,6 +51,26 @@ impl Drawable for Object2D {
             vertices_buf: v_buffer,
             indices_buf: i_buffer,
         });
+    }
+
+    fn draw<'a, 'b>(
+        &'a self,
+        rpass: &mut RenderPass<'b>,
+        pipeline: &RenderPipeline,
+        bind_group: &Vec<BindGroupLayout>,
+    ) where
+        'a: 'b,
+    {
+        let runtime_data = self
+            .runtime_data
+            .as_ref()
+            .expect("Runtime data should have been setup before calling draw on an object.");
+        rpass.set_vertex_buffer(0, runtime_data.vertices_buf.slice(..));
+        if let Some(indices) = runtime_data.indices_buf.as_ref() {
+            rpass.set_index_buffer(indices.slice(..), IndexFormat::Uint32);
+        } else {
+            rpass.draw(0..self.data.vertices.len() as u32, 0..1)
+        }
     }
 }
 
@@ -89,25 +91,6 @@ pub struct Object3D {
 }
 
 impl Drawable for Object3D {
-    fn draw<'a>(
-        &'a self,
-        rpass: &mut RenderPass<'a>,
-        pipeline: &RenderPipeline,
-        bind_group: &Vec<BindGroupLayout>,
-    ) {
-        let runtime_data = self
-            .runtime_data
-            .as_ref()
-            .expect("Runtime data should have been setup before calling draw on an object.");
-        rpass.set_vertex_buffer(0, runtime_data.vertices_buf.slice(..));
-        if let Some(indices) = runtime_data.indices_buf.as_ref() {
-            rpass.set_index_buffer(indices.slice(..), IndexFormat::Uint32);
-            rpass.draw_indexed(0..self.data.indices.len() as u32, 0, 0..1);
-        } else {
-            rpass.draw(0..self.data.vertices.len() as u32, 0..1)
-        }
-    }
-
     fn setup(&mut self, device: &Device) {
         let v_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("3D Object Vertex Buffer"),
@@ -128,6 +111,27 @@ impl Drawable for Object3D {
             vertices_buf: v_buffer,
             indices_buf: i_buffer,
         });
+    }
+
+    fn draw<'a, 'b>(
+        &'a self,
+        rpass: &mut RenderPass<'b>,
+        pipeline: &RenderPipeline,
+        bind_group: &Vec<BindGroupLayout>,
+    ) where
+        'a: 'b,
+    {
+        let runtime_data = self
+            .runtime_data
+            .as_ref()
+            .expect("Runtime data should have been setup before calling draw on an object.");
+        rpass.set_vertex_buffer(0, runtime_data.vertices_buf.slice(..));
+        if let Some(indices) = runtime_data.indices_buf.as_ref() {
+            rpass.set_index_buffer(indices.slice(..), IndexFormat::Uint32);
+            rpass.draw_indexed(0..self.data.indices.len() as u32, 0, 0..1);
+        } else {
+            rpass.draw(0..self.data.vertices.len() as u32, 0..1)
+        }
     }
 }
 
