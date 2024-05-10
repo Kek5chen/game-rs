@@ -62,7 +62,7 @@ impl App {
         Ok(event_loop)
     }
 
-    pub async fn run<'a>(mut self, world: &mut World<'a>) -> Result<(), Box<dyn Error>> {
+    pub async fn run(mut self, world: &mut World) -> Result<(), Box<dyn Error>> {
         let event_loop = self.init_state().await?;
 
         let renderer = self.renderer.as_mut().unwrap();

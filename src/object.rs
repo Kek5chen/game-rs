@@ -143,15 +143,15 @@ impl Object3D {
     }
 }
 
-pub struct GameObject<'parent> {
-    pub name: &'parent str,
-    pub children: Vec<Rc<RefCell<GameObject<'parent>>>>,
+pub struct GameObject {
+    pub name: String,
+    pub children: Vec<Rc<RefCell<GameObject>>>,
     pub transform: TransformComp,
     pub drawable: Option<Box<dyn Drawable>>,
 }
 
-impl<'parent> GameObject<'parent> {
-    pub fn add_child(&mut self, child: Rc<RefCell<GameObject<'parent>>>) {
+impl GameObject {
+    pub fn add_child(&mut self, child: Rc<RefCell<GameObject>>) {
         // TODO: Make the children know who it's owned by because of circling references
         self.children.push(child)
     }
