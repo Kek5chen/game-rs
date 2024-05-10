@@ -1,10 +1,11 @@
 use crate::buffer::{CUBE, CUBE_INDICES};
 use crate::drawable::Drawable;
-use crate::object::{Object2D, Object3D, Vertex2D, Vertex3D};
+use crate::object::{GameObject, Object2D, Object3D, Vertex2D, Vertex3D};
 use crate::state::State;
 use crate::world::World;
 use cgmath::Vector3;
 use log::error;
+use std::cell::RefMut;
 use wgpu::{
     include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder,
     CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp,
@@ -229,6 +230,14 @@ impl Renderer {
     }
 
     fn render(&mut self, ctx: &mut RenderContext, world: &mut World) {
+        let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_2d_id).unwrap();
+        let obj_rcs: Vec<RefMut<GameObject>> =
+            world.objects.iter().map(|obj| obj.borrow_mut()).collect();
+        let drawable_rcs = obj_rcs
+            .iter()
+            .filter_map(|o| o.drawable.as_ref())
+            .collect::<Vec<&Box<dyn Drawable>>>();
+
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(RenderPassColorAttachment {
@@ -251,22 +260,9 @@ impl Renderer {
             occlusion_query_set: None,
         });
 
-        {
-            let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_2d_id).unwrap();
-            rpass.set_pipeline(pipeline);
-            for obj in &world.objects {
-                let mut obj = obj.borrow_mut();
-                if obj.drawable.is_none() {
-                    continue;
-                }
-                let drawable = obj.drawable.as_mut().unwrap();
-                drawable.draw(&mut rpass, pipeline, bind_group_layout);
-            }
-        }
-
-        {
-            let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_3d_id).unwrap();
-            rpass.set_pipeline(pipeline);
+        rpass.set_pipeline(pipeline);
+        for drawable in drawable_rcs {
+            drawable.draw(&mut rpass, pipeline, bind_group_layout);
         }
     }
 
