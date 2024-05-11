@@ -1,11 +1,12 @@
-use crate::components::TransformComp;
+use crate::components::{CameraComp, Component, TransformComp};
 use crate::object::GameObject;
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 pub struct World {
     pub objects: Vec<Rc<RefCell<GameObject>>>,
     children: Vec<Rc<RefCell<GameObject>>>,
+    active_camera: Option<Weak<RefCell<GameObject>>>,
 }
 
 impl World {
@@ -13,6 +14,7 @@ impl World {
         World {
             objects: vec![],
             children: vec![],
+            active_camera: None,
         }
     }
 
@@ -27,6 +29,17 @@ impl World {
 
         self.objects.push(Rc::new(RefCell::new(obj)));
         self.objects.last().cloned().unwrap()
+    }
+
+    pub fn new_camera(&mut self) -> Rc<RefCell<GameObject>> {
+        let obj = self.new_object("Camera");
+
+        obj.borrow_mut().add_component::<CameraComp>();
+
+        if self.active_camera.is_none() {
+            self.active_camera = Some(Rc::<RefCell<GameObject>>::downgrade(&obj));
+        }
+        obj
     }
 
     pub fn add_child(&mut self, obj: Rc<RefCell<GameObject>>) {

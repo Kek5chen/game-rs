@@ -1,6 +1,8 @@
+mod camera;
 mod gravity;
 mod transform;
 
+pub use camera::CameraComp;
 pub use gravity::GravityComp;
 pub use transform::TransformComp;
 

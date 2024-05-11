@@ -27,6 +27,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut world = World::new();
     let obj1 = world.new_object("Mow");
     let obj2 = world.new_object("Meoow");
+    let camera = world.new_camera();
 
     obj2.borrow_mut().set_drawable(Some(Box::new(Object3D::new(
         CUBE.to_vec(),
@@ -34,6 +35,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ))));
     obj1.borrow_mut().add_child(obj2);
     world.add_child(obj1);
+    world.add_child(camera);
 
     let app = App::new("game-rs", 800, 600);
     if let Err(e) = app.run(&mut world).await {
