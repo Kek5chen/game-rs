@@ -1,4 +1,4 @@
-use crate::components::TransformComp;
+use crate::components::{Component, TransformComp};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
 use cgmath::Vector2;
@@ -152,6 +152,7 @@ pub struct GameObject {
     pub children: Vec<Rc<RefCell<GameObject>>>,
     pub transform: TransformComp,
     pub drawable: Option<Box<dyn Drawable>>,
+    pub components: Vec<Rc<RefCell<Box<dyn Component>>>>
 }
 
 impl GameObject {
@@ -162,5 +163,12 @@ impl GameObject {
 
     pub fn set_drawable(&mut self, drawable: Option<Box<dyn Drawable>>) {
         self.drawable = drawable;
+    }
+    
+    pub fn add_component<C: Component + 'static>(&mut self) {
+        let mut comp = Box::new(C::new());
+        comp.init();
+        
+        self.components.push(Rc::new(RefCell::new(comp)));
     }
 }

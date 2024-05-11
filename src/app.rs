@@ -82,6 +82,7 @@ impl App {
                 if !renderer.state.input(event) {
                     match event {
                         WindowEvent::RedrawRequested => {
+                            world.update();
                             renderer.state.update();
                             if !renderer.render_world(world) {
                                 window_target.exit();
