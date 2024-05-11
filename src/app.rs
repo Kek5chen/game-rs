@@ -37,6 +37,7 @@ impl App {
             window_builder: Some(
                 WindowBuilder::new()
                     .with_inner_size(Size::Physical(PhysicalSize { width, height }))
+                    .with_resizable(false)
                     .with_title(title),
             ),
             renderer: None,
