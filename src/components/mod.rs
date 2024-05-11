@@ -1,5 +1,7 @@
+mod gravity;
 mod transform;
 
+pub use gravity::GravityComp;
 pub use transform::TransformComp;
 
 use crate::object::GameObject;
