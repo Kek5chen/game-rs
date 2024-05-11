@@ -2,6 +2,7 @@ use crate::components::{Component, TransformComp};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
 use cgmath::Vector2;
+use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
@@ -152,7 +153,7 @@ pub struct GameObject {
     pub children: Vec<Rc<RefCell<GameObject>>>,
     pub transform: TransformComp,
     pub drawable: Option<Box<dyn Drawable>>,
-    pub components: Vec<Rc<RefCell<Box<dyn Component>>>>
+    pub components: Vec<Rc<RefCell<Box<dyn Component>>>>,
 }
 
 impl GameObject {
@@ -164,11 +165,20 @@ impl GameObject {
     pub fn set_drawable(&mut self, drawable: Option<Box<dyn Drawable>>) {
         self.drawable = drawable;
     }
-    
+
     pub fn add_component<C: Component + 'static>(&mut self) {
         let mut comp = Box::new(C::new());
         comp.init();
-        
+
         self.components.push(Rc::new(RefCell::new(comp)));
+    }
+
+    pub fn get_component<C: Component + 'static>(
+        &mut self,
+    ) -> Option<Rc<RefCell<Box<dyn Component>>>> {
+        self.components
+            .iter()
+            .find(|&c| c.type_id() == TypeId::of::<Rc<RefCell<Box<C>>>>())
+            .cloned()
     }
 }
