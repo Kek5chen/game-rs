@@ -231,12 +231,6 @@ impl Renderer {
 
     fn render(&mut self, ctx: &mut RenderContext, world: &mut World) {
         let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_3d_id).unwrap();
-        let obj_rcs: Vec<RefMut<GameObject>> =
-            world.objects.iter().map(|obj| obj.borrow_mut()).collect();
-        let drawable_rcs = obj_rcs
-            .iter()
-            .filter_map(|o| o.drawable.as_ref())
-            .collect::<Vec<&Box<dyn Drawable>>>();
 
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Render Pass"),
@@ -261,8 +255,14 @@ impl Renderer {
         });
 
         rpass.set_pipeline(pipeline);
-        for drawable in drawable_rcs {
-            drawable.draw(&mut rpass, pipeline, bind_group_layout);
+        
+        unsafe {
+            for object in &world.objects {
+                let object = object.as_ptr();
+                for drawable in &mut (*object).drawable {
+                    drawable.draw(&mut rpass, pipeline, bind_group_layout);
+                }
+            }
         }
     }
 
