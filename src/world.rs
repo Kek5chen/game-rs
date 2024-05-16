@@ -5,8 +5,8 @@ use std::rc::{Rc, Weak};
 
 pub struct World {
     pub objects: Vec<Rc<RefCell<GameObject>>>,
-    children: Vec<Rc<RefCell<GameObject>>>,
-    active_camera: Option<Weak<RefCell<GameObject>>>,
+    pub children: Vec<Rc<RefCell<GameObject>>>,
+    pub active_camera: Option<Weak<RefCell<GameObject>>>,
 }
 
 impl World {
@@ -47,18 +47,14 @@ impl World {
     }
 
     pub fn update(&mut self) {
-        // AHAHHAHA FUCKING HELL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FUCK YOUUUU BORRWOWW CHECKECHERERRR
-        let objects = self.objects.clone();
-        let obj_comps: Vec<(Rc<RefCell<GameObject>>, Vec<Rc<RefCell<Box<dyn Component>>>>)> = objects
-            .into_iter()
-            .map(|o| {
-                let comps = o.borrow_mut().components.clone();
-                (o, comps)
-            })
-            .collect();
-        for (obj, comps) in obj_comps {
-            for comp in comps {
-                comp.borrow_mut().update(obj.clone())
+        // i've grown wiser
+        unsafe {
+            for object in &self.objects {
+                let object_ptr = object.as_ptr();
+                for comp in &(*object_ptr).components {
+                    let comp_ptr = comp.as_ptr();
+                    (*comp_ptr).update(object.clone())
+                }
             }
         }
     }
