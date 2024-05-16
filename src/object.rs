@@ -175,10 +175,13 @@ impl GameObject {
 
     pub fn get_component<C: Component + 'static>(
         &mut self,
-    ) -> Option<Rc<RefCell<Box<dyn Component>>>> {
-        self.components
+    ) -> Option<Rc<RefCell<Box<C>>>> {
+        let comp = self.components
             .iter()
             .find(|&c| c.type_id() == TypeId::of::<Rc<RefCell<Box<C>>>>())
-            .cloned()
+            .cloned();
+        unsafe {
+            std::mem::transmute::<_, Option<Rc<RefCell<Box<C>>>>>(comp)
+        }
     }
 }
