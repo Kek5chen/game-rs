@@ -230,6 +230,10 @@ impl Renderer {
     }
 
     fn render(&mut self, ctx: &mut RenderContext, world: &mut World) {
+        if world.active_camera.is_none() {
+            return;
+        }
+
         let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_3d_id).unwrap();
 
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
@@ -255,6 +259,37 @@ impl Renderer {
         });
 
         rpass.set_pipeline(pipeline);
+        
+        let camera_rc = world.active_camera.as_ref().unwrap().upgrade();
+        if camera_rc.is_none() {
+            return;
+        }
+        
+        let camera = camera_rc.unwrap();
+        let camera_comp: Option<Rc<RefCell<Box<CameraComp>>>> = camera.borrow_mut().get_component::<CameraComp>();
+        if camera_comp.is_none() {
+            return;
+        }
+        
+        let camera_comp = camera_comp.unwrap();
+        let projection_matrix: &Matrix4<f32> = &camera_comp.borrow_mut().projection;
+        let camera_transform = &camera.borrow().transform;
+        let camera_data = CameraData::new(projection_matrix, camera_transform);
+        
+        let camera_buffer = self.state.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Camera Uniform Buffer"),
+            contents: &bytemuck::cast_slice(&[camera_data]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        });
+        
+        let camera_bind_group = self.state.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Camera Uniform Bind Group"),
+            layout: self.find_bind_group_layout(self.bind_group_layout_3d_id, &self.find_pipeline(self.pipeline_3d_id).as_ref().unwrap().1).unwrap(),
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }]
+        });
         
         unsafe {
             for object in &world.objects {
