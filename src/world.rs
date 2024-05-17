@@ -19,13 +19,15 @@ impl World {
     }
 
     pub fn new_object(&mut self, name: &str) -> Rc<RefCell<GameObject>> {
-        let obj = GameObject {
+        let mut obj = GameObject {
             name: name.to_owned(),
             children: vec![],
             transform: TransformComp::new(),
             drawable: None,
             components: vec![],
         };
+
+        obj.transform.init();
 
         self.objects.push(Rc::new(RefCell::new(obj)));
         self.objects.last().cloned().unwrap()
