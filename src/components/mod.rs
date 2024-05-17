@@ -7,10 +7,11 @@ pub use gravity::GravityComp;
 pub use transform::TransformComp;
 
 use crate::object::GameObject;
+use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub trait Component {
+pub trait Component: Any {
     fn new() -> Self
     where
         Self: Sized;

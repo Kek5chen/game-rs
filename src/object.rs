@@ -1,4 +1,4 @@
-use crate::components::{Component, TransformComp};
+use crate::components::{CameraComp, Component, TransformComp};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
 use cgmath::Vector2;
@@ -178,7 +178,7 @@ impl GameObject {
     ) -> Option<Rc<RefCell<Box<C>>>> {
         let comp = self.components
             .iter()
-            .find(|&c| c.type_id() == TypeId::of::<Rc<RefCell<Box<C>>>>())
+            .find(|&c| c.borrow().as_ref().type_id() == TypeId::of::<CameraComp>())
             .cloned();
         unsafe {
             std::mem::transmute::<_, Option<Rc<RefCell<Box<C>>>>>(comp)
