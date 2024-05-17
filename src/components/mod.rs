@@ -15,6 +15,6 @@ pub trait Component: Any {
     fn new() -> Self
     where
         Self: Sized;
-    fn init(&mut self);
+    fn init(&mut self, parent: &mut GameObject);
     fn update(&mut self, parent: Rc<RefCell<GameObject>>, deltaTime: f32);
 }

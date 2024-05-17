@@ -30,7 +30,10 @@ impl World {
             components: vec![],
         };
 
-        obj.transform.init();
+        let obj_ptr: *mut GameObject = &mut obj;
+        unsafe {
+            obj.transform.init(&mut *obj_ptr);
+        }
 
         self.objects.push(Rc::new(RefCell::new(obj)));
         self.objects.last().cloned().unwrap()

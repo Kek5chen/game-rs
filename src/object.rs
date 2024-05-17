@@ -169,7 +169,7 @@ impl GameObject {
 
     pub fn add_component<C: Component + 'static>(&mut self) {
         let mut comp = Box::new(C::new());
-        comp.init();
+        comp.init(self);
 
         self.components.push(Rc::new(RefCell::new(comp)));
     }
@@ -201,7 +201,7 @@ impl ModelData {
             mvp_mat: Matrix4::identity(),
         }
     }
-    
+
     pub fn update(&mut self, object: &mut GameObject, camera_data: &CameraData) {
         self.model_mat = *object.transform.full_matrix();
         self.mvp_mat = camera_data.proj_view_mat * self.model_mat;

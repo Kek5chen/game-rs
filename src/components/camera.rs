@@ -16,8 +16,8 @@ impl Component for CameraComp {
         }
     }
 
-    fn init(&mut self) {
 
+    fn init(&mut self, parent: &mut GameObject) {
     }
 
     fn update(&mut self, parent: Rc<RefCell<GameObject>>, deltaTime: f32) {

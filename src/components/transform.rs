@@ -41,7 +41,7 @@ impl TransformComp {
     pub fn rotation(&self) -> &Vector3<f32> {
         &self.rot
     }
-    
+
     pub fn rotate(&mut self, rot: Vector3<f32>) {
         self.rot += rot;
         self.recalculate_rot_matrix();
@@ -105,7 +105,7 @@ impl Component for TransformComp {
         }
     }
 
-    fn init(&mut self) {}
+    fn init(&mut self, parent: &mut GameObject) {}
 
     fn update(&mut self, parent: Rc<RefCell<GameObject>>, deltaTime: f32) {}
 }

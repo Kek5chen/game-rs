@@ -19,7 +19,7 @@ impl Component for GravityComp {
         }
     }
 
-    fn init(&mut self) {}
+    fn init(&mut self, parent: &mut GameObject) {}
 
     fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32) {
         self.velocity = (self.velocity - self.acceleration_per_sec * delta_time)
