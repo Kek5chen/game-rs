@@ -70,7 +70,7 @@ impl TransformComp {
     }
 
     fn recalculate_pos_matrix(&mut self) {
-        self.pos_mat = Matrix4::from_translation(-self.pos);
+        self.pos_mat = Matrix4::from_translation(self.pos);
     }
 
     fn recalculate_rot_matrix(&mut self) {
