@@ -13,7 +13,7 @@ pub struct GravityComp {
 impl Component for GravityComp {
     fn new() -> Self {
         GravityComp {
-            acceleration_per_sec: 8.41,
+            acceleration_per_sec: 9.80665,
             velocity: 0.0,
             max_acceleration: 100.0,
         }
