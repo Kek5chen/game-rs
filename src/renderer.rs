@@ -1,18 +1,16 @@
-use crate::buffer::{CUBE, CUBE_INDICES};
 use crate::components::camera::CameraData;
-use crate::components::{CameraComp, TransformComp};
-use crate::drawable::Drawable;
-use crate::object::{GameObject, Object2D, Object3D, Vertex2D, Vertex3D};
+use crate::components::CameraComp;
+use crate::object::{Vertex2D, Vertex3D};
 use crate::state::State;
 use crate::world::World;
 use cgmath::{Matrix4, Vector3};
 use log::{debug, error};
-use std::cell::{RefCell, RefMut};
+use std::cell::RefCell;
 use std::rc::Rc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{
     include_wgsl, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BindingResource, BindingType, BufferBinding, BufferBindingType,
+    BindGroupLayoutEntry, BindingType, BufferBindingType,
     BufferUsages, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor,
     CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations,
     PipelineLayout, RenderPassColorAttachment, RenderPassDepthStencilAttachment,
@@ -181,13 +179,13 @@ impl Renderer {
         let state = State::new(&window).await;
 
         let (pipeline_2d_layout, pipeline_2d) = Self::make_2d_pipeline(&state);
-        let (pipeline_3d_layout, pipeline_3d, camera_bind_group_layout) =
+        let (pipeline_3d_layout, pipeline_3d, camera_bind_group_layout_3d) =
             Self::make_3d_pipeline(&state);
         Renderer {
             window,
             pipeline_2d_id: pipeline_2d.global_id(),
             pipeline_3d_id: pipeline_3d.global_id(),
-            pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![camera_bind_group_layout])],
+            pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![camera_bind_group_layout_3d])],
             state,
         }
     }
