@@ -56,6 +56,7 @@ impl World {
         unsafe {
             for object in &self.objects {
                 let object_ptr = object.as_ptr();
+                (*object_ptr).transform.update(object.clone(), self.last_frame_time.elapsed().as_secs_f32());
                 for comp in &(*object_ptr).components {
                     let comp_ptr = comp.as_ptr();
                     (*comp_ptr).update(object.clone(), self.last_frame_time.elapsed().as_secs_f32())
