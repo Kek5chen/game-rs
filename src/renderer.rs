@@ -1,18 +1,24 @@
 use crate::buffer::{CUBE, CUBE_INDICES};
+use crate::components::camera::CameraData;
+use crate::components::{CameraComp, TransformComp};
 use crate::drawable::Drawable;
 use crate::object::{GameObject, Object2D, Object3D, Vertex2D, Vertex3D};
 use crate::state::State;
 use crate::world::World;
-use cgmath::Vector3;
-use log::error;
-use std::cell::RefMut;
+use cgmath::{Matrix4, Vector3};
+use log::{debug, error};
+use std::cell::{RefCell, RefMut};
+use std::rc::Rc;
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{
-    include_wgsl, BindGroupLayout, Color, ColorTargetState, ColorWrites, CommandEncoder,
-    CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, LoadOp,
-    MultisampleState, Operations, PipelineLayout, RenderPassColorAttachment,
-    RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, StencilState, StoreOp,
-    SurfaceError, SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor,
-    VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode,
+    include_wgsl, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BindingResource, BindingType, BufferBinding, BufferBindingType,
+    BufferUsages, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor,
+    CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations,
+    PipelineLayout, RenderPassColorAttachment, RenderPassDepthStencilAttachment,
+    RenderPassDescriptor, RenderPipeline, ShaderStages, StencilState, StoreOp, SurfaceError,
+    SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute,
+    VertexBufferLayout, VertexFormat, VertexStepMode,
 };
 use winit::window::Window;
 
@@ -87,13 +93,30 @@ impl Renderer {
         (pipeline_2d_layout, pipeline_2d)
     }
 
-    fn make_3d_pipeline(state: &State) -> (PipelineLayout, RenderPipeline) {
+    fn make_3d_pipeline(state: &State) -> (PipelineLayout, RenderPipeline, BindGroupLayout) {
+        let camera_bind_group_layout =
+            state
+                .device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: Some("Camera Uniform Bind Group Layout"),
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::VERTEX,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
+
         let pipeline_3d_layout =
             state
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("3D Render Pipeline"),
-                    bind_group_layouts: &[],
+                    bind_group_layouts: &[&camera_bind_group_layout],
                     push_constant_ranges: &[],
                 });
 
@@ -152,18 +175,19 @@ impl Renderer {
                 multiview: None,
             });
 
-        (pipeline_3d_layout, pipeline_3d)
+        (pipeline_3d_layout, pipeline_3d, camera_bind_group_layout)
     }
     pub(crate) async fn new(window: Window) -> Renderer {
         let state = State::new(&window).await;
 
         let (pipeline_2d_layout, pipeline_2d) = Self::make_2d_pipeline(&state);
-        let (pipeline_3d_layout, pipeline_3d) = Self::make_3d_pipeline(&state);
+        let (pipeline_3d_layout, pipeline_3d, camera_bind_group_layout) =
+            Self::make_3d_pipeline(&state);
         Renderer {
             window,
             pipeline_2d_id: pipeline_2d.global_id(),
             pipeline_3d_id: pipeline_3d.global_id(),
-            pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![])],
+            pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![camera_bind_group_layout])],
             state,
         }
     }
@@ -231,10 +255,46 @@ impl Renderer {
 
     fn render(&mut self, ctx: &mut RenderContext, world: &mut World) {
         if world.active_camera.is_none() {
+            debug!("No camera active");
             return;
         }
 
-        let (pipeline, bind_group_layout) = self.find_pipeline(self.pipeline_3d_id).unwrap();
+        let camera_rc = world.active_camera.as_ref().unwrap().upgrade();
+        if camera_rc.is_none() {
+            debug!("Couldn't take ownership of camera");
+            return;
+        }
+
+        let camera = camera_rc.unwrap();
+        let camera_comp: Option<Rc<RefCell<Box<CameraComp>>>> =
+            camera.borrow_mut().get_component::<CameraComp>();
+        if camera_comp.is_none() {
+            debug!("Camera didn't have a camera component");
+            return;
+        }
+
+        let camera_comp = camera_comp.unwrap();
+        let projection_matrix: &Matrix4<f32> = &camera_comp.borrow_mut().projection;
+        let camera_transform = &camera.borrow().transform;
+        let camera_data = CameraData::new(projection_matrix, camera_transform);
+
+        let camera_buffer = self.state.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Camera Uniform Buffer"),
+            contents: bytemuck::cast_slice(&[camera_data]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        });
+        
+        let (pipeline, bind_group_layouts) = self.find_pipeline(self.pipeline_3d_id).unwrap();
+
+        let camera_bind_group = self.state.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Camera Uniform Bind Group"),
+            layout: bind_group_layouts.first().unwrap(),
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
+        });
+
 
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Render Pass"),
@@ -259,43 +319,13 @@ impl Renderer {
         });
 
         rpass.set_pipeline(pipeline);
-        
-        let camera_rc = world.active_camera.as_ref().unwrap().upgrade();
-        if camera_rc.is_none() {
-            return;
-        }
-        
-        let camera = camera_rc.unwrap();
-        let camera_comp: Option<Rc<RefCell<Box<CameraComp>>>> = camera.borrow_mut().get_component::<CameraComp>();
-        if camera_comp.is_none() {
-            return;
-        }
-        
-        let camera_comp = camera_comp.unwrap();
-        let projection_matrix: &Matrix4<f32> = &camera_comp.borrow_mut().projection;
-        let camera_transform = &camera.borrow().transform;
-        let camera_data = CameraData::new(projection_matrix, camera_transform);
-        
-        let camera_buffer = self.state.device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Camera Uniform Buffer"),
-            contents: &bytemuck::cast_slice(&[camera_data]),
-            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-        });
-        
-        let camera_bind_group = self.state.device.create_bind_group(&BindGroupDescriptor {
-            label: Some("Camera Uniform Bind Group"),
-            layout: self.find_bind_group_layout(self.bind_group_layout_3d_id, &self.find_pipeline(self.pipeline_3d_id).as_ref().unwrap().1).unwrap(),
-            entries: &[BindGroupEntry {
-                binding: 0,
-                resource: camera_buffer.as_entire_binding(),
-            }]
-        });
-        
+        rpass.set_bind_group(0, &camera_bind_group, &[]);
+
         unsafe {
             for object in &world.objects {
                 let object = object.as_ptr();
                 for drawable in &mut (*object).drawable {
-                    drawable.draw(&mut rpass, pipeline, bind_group_layout);
+                    drawable.draw(&mut rpass, pipeline, bind_group_layouts);
                 }
             }
         }
