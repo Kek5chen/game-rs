@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Matrix4, SquareMatrix, Vector3, Zero};
+use cgmath::{Deg, Matrix4, Rad, SquareMatrix, Vector3};
 use crate::components::{Component, TransformComp};
 use crate::object::GameObject;
 
@@ -12,7 +12,7 @@ pub struct CameraComp {
 impl Component for CameraComp {
     fn new() -> Self {
         CameraComp {
-            projection: Matrix4::identity(),
+            projection: cgmath::perspective(Deg(60.0), 800.0 / 600.0, 0.01, 1000.0),
         }
     }
 
