@@ -1,6 +1,6 @@
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
-use crate::object::{Vertex2D, Vertex3D};
+use crate::object::{ModelData, Vertex2D, Vertex3D};
 use crate::state::State;
 use crate::world::World;
 use cgmath::{Matrix4, Vector3};
@@ -34,7 +34,9 @@ pub struct Renderer {
     pipeline_3d_id: Id<RenderPipeline>,
     uniform_bind_group_layout: BindGroupLayout,
     camera_uniform_data: Box<CameraData>,
+    model_uniform_data: Box<ModelData>,
     camera_uniform_buffer: Buffer,
+    model_uniform_buffer: Buffer,
     uniform_bind_group: BindGroup,
 }
 
@@ -169,22 +171,35 @@ impl Renderer {
     fn create_uniform_buffer(
         state: &State,
         camera_data: &CameraData,
-    ) -> (BindGroupLayout, Buffer, BindGroup) {
+        model_data: &ModelData,
+    ) -> (BindGroupLayout, Buffer, Buffer, BindGroup) {
         let uniform_bind_group_layout =
             state
                 .device
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
                     label: Some("Uniform Bind Group Layout"),
-                    entries: &[BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: ShaderStages::VERTEX,
-                        ty: BindingType::Buffer {
-                            ty: BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
+                    entries: &[
+                        BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: ShaderStages::VERTEX,
+                            ty: BindingType::Buffer {
+                                ty: BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
                         },
-                        count: None,
-                    }],
+                        BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: ShaderStages::VERTEX,
+                            ty: BindingType::Buffer {
+                                ty: BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        },
+                    ],
                 });
 
         let uniform_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
@@ -193,18 +208,31 @@ impl Renderer {
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 
+        let model_uniform_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Model Uniform Buffer"),
+            contents: bytemuck::cast_slice(&[*model_data]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        });
+
         let uniform_bind_group = state.device.create_bind_group(&BindGroupDescriptor {
             label: Some("Uniform Bind Group"),
             layout: &uniform_bind_group_layout,
-            entries: &[BindGroupEntry {
-                binding: 0,
-                resource: uniform_buffer.as_entire_binding(),
-            }],
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding(),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: model_uniform_buffer.as_entire_binding(),
+                },
+            ],
         });
 
         (
             uniform_bind_group_layout,
             uniform_buffer,
+            model_uniform_buffer,
             uniform_bind_group,
         )
     }
@@ -213,8 +241,13 @@ impl Renderer {
         let state = State::new(&window).await;
 
         let camera_data = Box::new(CameraData::empty());
-        let (uniform_bind_group_layout, camera_uniform_buffer, uniform_bind_group) =
-            Self::create_uniform_buffer(&state, &camera_data);
+        let model_data = Box::new(ModelData::empty());
+        let (
+            uniform_bind_group_layout,
+            camera_uniform_buffer,
+            model_uniform_buffer,
+            uniform_bind_group,
+        ) = Self::create_uniform_buffer(&state, &camera_data, &model_data);
         let (pipeline_2d_layout, pipeline_2d) = Self::make_2d_pipeline(&state);
         let (pipeline_3d_layout, pipeline_3d) =
             Self::make_3d_pipeline(&state, &uniform_bind_group_layout);
@@ -225,7 +258,9 @@ impl Renderer {
             pipelines: vec![pipeline_2d, pipeline_3d],
             uniform_bind_group_layout,
             camera_uniform_data: camera_data,
+            model_uniform_data: model_data,
             camera_uniform_buffer,
+            model_uniform_buffer,
             uniform_bind_group,
             state,
         }
@@ -323,6 +358,9 @@ impl Renderer {
             bytemuck::cast_slice(&[*self.camera_uniform_data]),
         );
 
+        let model_uniform_data: *mut ModelData = &mut *self.model_uniform_data;
+        let model_uniform_buffer: *mut Buffer = &mut self.model_uniform_buffer;
+
         let pipeline = self.find_pipeline(self.pipeline_3d_id).unwrap();
 
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
@@ -354,6 +392,12 @@ impl Renderer {
             for object in &world.objects {
                 let object = object.as_ptr();
                 for drawable in &mut (*object).drawable {
+                    (*model_uniform_data).update(&mut *object, &self.camera_uniform_data);
+                    self.state.queue.write_buffer(
+                        &*model_uniform_buffer,
+                        0,
+                        bytemuck::cast_slice(&[*model_uniform_data]),
+                    );
                     drawable.draw(&mut rpass, pipeline, &self.uniform_bind_group_layout);
                 }
             }

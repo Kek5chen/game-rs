@@ -1,12 +1,13 @@
 use crate::components::{CameraComp, Component, TransformComp};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
-use cgmath::Vector2;
+use cgmath::{Matrix4, SquareMatrix, Vector2};
 use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BindGroupLayout, BufferUsages, Device, IndexFormat, RenderPass, RenderPipeline};
+use crate::components::camera::CameraData;
 
 pub struct ObjectRuntimeData {
     vertices_buf: wgpu::Buffer,
@@ -185,3 +186,28 @@ impl GameObject {
         }
     }
 }
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ModelData {
+    model_mat: Matrix4<f32>,
+    mvp_mat: Matrix4<f32>,
+}
+
+impl ModelData {
+    pub fn empty() -> Self {
+        ModelData {
+            model_mat: Matrix4::identity(),
+            mvp_mat: Matrix4::identity(),
+        }
+    }
+    
+    pub fn update(&mut self, object: &mut GameObject, camera_data: &CameraData) {
+        self.model_mat = *object.transform.full_matrix();
+        self.mvp_mat = camera_data.proj_view_mat * self.model_mat;
+    }
+}
+
+unsafe impl Zeroable for ModelData {}
+
+unsafe impl Pod for ModelData {}

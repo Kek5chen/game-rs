@@ -36,7 +36,7 @@ pub struct CameraData {
     _padding2: f32,
     view_mat: Matrix4<f32>,
     projection_mat: Matrix4<f32>,
-    proj_view_mat: Matrix4<f32>,
+    pub proj_view_mat: Matrix4<f32>,
 }
 
 impl CameraData {

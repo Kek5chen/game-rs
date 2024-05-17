@@ -18,14 +18,22 @@ struct CameraData {
     view_proj_mat: mat4x4<f32>,
 }
 
+struct ModelData {
+    model_mat: mat4x4<f32>,
+    mvp_mat: mat4x4<f32>
+}
+
 @group(0) @binding(0)
 var<uniform> camera: CameraData;
+
+@group(0) @binding(1)
+var<uniform> model: ModelData;
 
 @vertex
 fn vs_main(in: VInput) -> VOutput {
     var out: VOutput;
 
-    out.position = camera.view_proj_mat * vec4<f32>(in.vpos, 1.0);
+    out.position = model.mvp_mat * vec4<f32>(in.vpos, 1.0);
     out.color = vec4<f32>(in.vcol, 1.0);
 
     return out;
