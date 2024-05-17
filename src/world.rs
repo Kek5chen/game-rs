@@ -2,11 +2,13 @@ use crate::components::{CameraComp, Component, TransformComp};
 use crate::object::GameObject;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
+use std::time::Instant;
 
 pub struct World {
     pub objects: Vec<Rc<RefCell<GameObject>>>,
     pub children: Vec<Rc<RefCell<GameObject>>>,
-    pub active_camera: Option<Weak<RefCell<GameObject>>>,
+    pub active_camera: Option<Weak<RefCell<GameObject>>>, 
+    last_frame_time: Instant,
 }
 
 impl World {
@@ -15,6 +17,7 @@ impl World {
             objects: vec![],
             children: vec![],
             active_camera: None,
+            last_frame_time: Instant::now(),
         }
     }
 
@@ -55,9 +58,11 @@ impl World {
                 let object_ptr = object.as_ptr();
                 for comp in &(*object_ptr).components {
                     let comp_ptr = comp.as_ptr();
-                    (*comp_ptr).update(object.clone())
+                    (*comp_ptr).update(object.clone(), self.last_frame_time.elapsed().as_secs_f32())
                 }
             }
         }
+        
+        self.last_frame_time = Instant::now();
     }
 }

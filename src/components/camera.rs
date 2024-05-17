@@ -20,7 +20,7 @@ impl Component for CameraComp {
 
     }
 
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>) {
+    fn update(&mut self, parent: Rc<RefCell<GameObject>>, deltaTime: f32) {
     }
 }
 

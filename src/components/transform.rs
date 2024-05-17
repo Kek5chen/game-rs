@@ -100,6 +100,6 @@ impl Component for TransformComp {
     fn init(&mut self) {
     }
 
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>) {
+    fn update(&mut self, parent: Rc<RefCell<GameObject>>, deltaTime: f32) {
     }
 }
