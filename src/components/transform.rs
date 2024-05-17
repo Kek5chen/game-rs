@@ -41,6 +41,12 @@ impl TransformComp {
     pub fn rotation(&self) -> &Vector3<f32> {
         &self.rot
     }
+    
+    pub fn rotate(&mut self, rot: Vector3<f32>) {
+        self.rot += rot;
+        self.recalculate_rot_matrix();
+        self.recalculate_combined_matrix();
+    }
 
     pub fn set_nonuniform_scale(&mut self, scale: Vector3<f32>) {
         self.scale = scale;
