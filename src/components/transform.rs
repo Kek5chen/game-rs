@@ -84,7 +84,7 @@ impl TransformComp {
     }
 
     fn recalculate_combined_matrix(&mut self) {
-        self.combined_mat = self.scale_mat * self.rot_mat * self.pos_mat;
+        self.combined_mat = self.pos_mat * self.rot_mat * self.scale_mat;
     }
 
     pub fn full_matrix(&self) -> &Matrix4<f32> {
