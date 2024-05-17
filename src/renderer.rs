@@ -9,8 +9,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{
-    include_wgsl, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BindingType, BufferBindingType,
+    include_wgsl, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
+    BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType,
     BufferUsages, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor,
     CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations,
     PipelineLayout, RenderPassColorAttachment, RenderPassDepthStencilAttachment,
@@ -29,9 +29,13 @@ pub struct RenderContext {
 pub struct Renderer {
     pub(crate) state: State,
     window: Window,
-    pipelines: Vec<(RenderPipeline, Vec<BindGroupLayout>)>,
+    pipelines: Vec<RenderPipeline>,
     pipeline_2d_id: Id<RenderPipeline>,
     pipeline_3d_id: Id<RenderPipeline>,
+    uniform_bind_group_layout: BindGroupLayout,
+    camera_uniform_data: Box<CameraData>,
+    camera_uniform_buffer: Buffer,
+    uniform_bind_group: BindGroup,
 }
 
 impl Renderer {
@@ -91,30 +95,16 @@ impl Renderer {
         (pipeline_2d_layout, pipeline_2d)
     }
 
-    fn make_3d_pipeline(state: &State) -> (PipelineLayout, RenderPipeline, BindGroupLayout) {
-        let camera_bind_group_layout =
-            state
-                .device
-                .create_bind_group_layout(&BindGroupLayoutDescriptor {
-                    label: Some("Camera Uniform Bind Group Layout"),
-                    entries: &[BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: ShaderStages::VERTEX,
-                        ty: BindingType::Buffer {
-                            ty: BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    }],
-                });
-
+    fn make_3d_pipeline(
+        state: &State,
+        uniform_bind_group_layout: &BindGroupLayout,
+    ) -> (PipelineLayout, RenderPipeline) {
         let pipeline_3d_layout =
             state
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("3D Render Pipeline"),
-                    bind_group_layouts: &[&camera_bind_group_layout],
+                    bind_group_layouts: &[uniform_bind_group_layout],
                     push_constant_ranges: &[],
                 });
 
@@ -173,19 +163,70 @@ impl Renderer {
                 multiview: None,
             });
 
-        (pipeline_3d_layout, pipeline_3d, camera_bind_group_layout)
+        (pipeline_3d_layout, pipeline_3d)
     }
+
+    fn create_uniform_buffer(
+        state: &State,
+        camera_data: &CameraData,
+    ) -> (BindGroupLayout, Buffer, BindGroup) {
+        let uniform_bind_group_layout =
+            state
+                .device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: Some("Uniform Bind Group Layout"),
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::VERTEX,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
+
+        let uniform_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Uniform Buffer"),
+            contents: bytemuck::cast_slice(&[*camera_data]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        });
+
+        let uniform_bind_group = state.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Uniform Bind Group"),
+            layout: &uniform_bind_group_layout,
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+        });
+
+        (
+            uniform_bind_group_layout,
+            uniform_buffer,
+            uniform_bind_group,
+        )
+    }
+
     pub(crate) async fn new(window: Window) -> Renderer {
         let state = State::new(&window).await;
 
+        let camera_data = Box::new(CameraData::empty());
+        let (uniform_bind_group_layout, camera_uniform_buffer, uniform_bind_group) =
+            Self::create_uniform_buffer(&state, &camera_data);
         let (pipeline_2d_layout, pipeline_2d) = Self::make_2d_pipeline(&state);
-        let (pipeline_3d_layout, pipeline_3d, camera_bind_group_layout_3d) =
-            Self::make_3d_pipeline(&state);
+        let (pipeline_3d_layout, pipeline_3d) =
+            Self::make_3d_pipeline(&state, &uniform_bind_group_layout);
         Renderer {
             window,
             pipeline_2d_id: pipeline_2d.global_id(),
             pipeline_3d_id: pipeline_3d.global_id(),
-            pipelines: vec![(pipeline_2d, vec![]), (pipeline_3d, vec![camera_bind_group_layout_3d])],
+            pipelines: vec![pipeline_2d, pipeline_3d],
+            uniform_bind_group_layout,
+            camera_uniform_data: camera_data,
+            camera_uniform_buffer,
+            uniform_bind_group,
             state,
         }
     }
@@ -274,25 +315,15 @@ impl Renderer {
         let camera_comp = camera_comp.unwrap();
         let projection_matrix: &Matrix4<f32> = &camera_comp.borrow_mut().projection;
         let camera_transform = &camera.borrow().transform;
-        let camera_data = CameraData::new(projection_matrix, camera_transform);
+        self.camera_uniform_data
+            .update(projection_matrix, camera_transform);
+        self.state.queue.write_buffer(
+            &self.camera_uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[*self.camera_uniform_data]),
+        );
 
-        let camera_buffer = self.state.device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Camera Uniform Buffer"),
-            contents: bytemuck::cast_slice(&[camera_data]),
-            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-        });
-        
-        let (pipeline, bind_group_layouts) = self.find_pipeline(self.pipeline_3d_id).unwrap();
-
-        let camera_bind_group = self.state.device.create_bind_group(&BindGroupDescriptor {
-            label: Some("Camera Uniform Bind Group"),
-            layout: bind_group_layouts.first().unwrap(),
-            entries: &[BindGroupEntry {
-                binding: 0,
-                resource: camera_buffer.as_entire_binding(),
-            }],
-        });
-
+        let pipeline = self.find_pipeline(self.pipeline_3d_id).unwrap();
 
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Render Pass"),
@@ -317,13 +348,13 @@ impl Renderer {
         });
 
         rpass.set_pipeline(pipeline);
-        rpass.set_bind_group(0, &camera_bind_group, &[]);
+        rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
 
         unsafe {
             for object in &world.objects {
                 let object = object.as_ptr();
                 for drawable in &mut (*object).drawable {
-                    drawable.draw(&mut rpass, pipeline, bind_group_layouts);
+                    drawable.draw(&mut rpass, pipeline, &self.uniform_bind_group_layout);
                 }
             }
         }
@@ -335,11 +366,8 @@ impl Renderer {
         self.window.request_redraw();
     }
 
-    pub fn find_pipeline(
-        &self,
-        id: Id<RenderPipeline>,
-    ) -> Option<&(RenderPipeline, Vec<BindGroupLayout>)> {
-        self.pipelines.iter().find(|p| id == p.0.global_id())
+    pub fn find_pipeline(&self, id: Id<RenderPipeline>) -> Option<&RenderPipeline> {
+        self.pipelines.iter().find(|p| id == p.global_id())
     }
 
     pub fn window(&self) -> &Window {

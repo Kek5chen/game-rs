@@ -6,7 +6,7 @@ pub(crate) trait Drawable {
         &'a self,
         rpass: &mut RenderPass<'b>,
         pipeline: &RenderPipeline,
-        bind_group: &Vec<BindGroupLayout>,
+        bind_group: &BindGroupLayout,
     ) where
         'a: 'b;
 }

@@ -58,7 +58,7 @@ impl Drawable for Object2D {
         &'a self,
         rpass: &mut RenderPass<'b>,
         pipeline: &RenderPipeline,
-        bind_group: &Vec<BindGroupLayout>,
+        bind_group: &BindGroupLayout,
     ) where
         'a: 'b,
     {
@@ -118,7 +118,7 @@ impl Drawable for Object3D {
         &'a self,
         rpass: &mut RenderPass<'b>,
         pipeline: &RenderPipeline,
-        bind_group: &Vec<BindGroupLayout>,
+        bind_group: &BindGroupLayout,
     ) where
         'a: 'b,
     {
