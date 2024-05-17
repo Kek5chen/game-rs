@@ -14,6 +14,7 @@ use crate::world::World;
 use env_logger::Env;
 use log::{error, LevelFilter};
 use std::error::Error;
+use cgmath::Vector3;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -28,6 +29,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let obj1 = world.new_object("Mow");
     let obj2 = world.new_object("Meoow");
     let camera = world.new_camera();
+    
+    camera.borrow_mut().transform.set_position(Vector3::new(0.0, 1.0, 5.0));
 
     obj2.borrow_mut().set_drawable(Some(Box::new(Object3D::new(
         CUBE.to_vec(),
