@@ -13,6 +13,7 @@ pub struct TransformComp {
     rot_mat: Matrix4<f32>,
     scale_mat: Matrix4<f32>,
     combined_mat: Matrix4<f32>,
+    invert_position: bool,
 }
 
 impl TransformComp {
@@ -24,6 +25,10 @@ impl TransformComp {
 
     pub fn position(&self) -> &Vector3<f32> {
         &self.pos
+    }
+    
+    pub fn set_invert_position(&mut self, invert: bool) {
+        self.invert_position = invert;
     }
 
     pub fn translate(&mut self, other: Vector3<f32>) {
@@ -70,7 +75,12 @@ impl TransformComp {
     }
 
     fn recalculate_pos_matrix(&mut self) {
-        self.pos_mat = Matrix4::from_translation(self.pos);
+        let pos = if self.invert_position {
+            -self.pos
+        } else {
+            self.pos
+        };
+        self.pos_mat = Matrix4::from_translation(pos);
     }
 
     fn recalculate_rot_matrix(&mut self) {
@@ -102,6 +112,7 @@ impl Component for TransformComp {
             rot_mat: Matrix4::identity(),
             scale_mat: Matrix4::identity(),
             combined_mat: Matrix4::identity(),
+            invert_position: false,
         }
     }
 
