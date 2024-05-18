@@ -24,6 +24,7 @@ pub struct ObjectVertexData<T> {
 }
 
 #[derive(Copy, Clone)]
+#[repr(C)]
 pub struct Vertex2D {
     pub position: Vector2<f32>,
 }
