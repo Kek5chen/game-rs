@@ -2,7 +2,7 @@ use crate::components::camera::CameraData;
 use crate::components::{CameraComp, Component, TransformComp};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3};
+use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
 use itertools::{izip, Itertools};
 use russimp::scene::PostProcess;
 use russimp::Vector3D;
@@ -175,8 +175,11 @@ impl Object3D {
             vec![
                 PostProcess::CalculateTangentSpace,
                 PostProcess::Triangulate,
+                PostProcess::SortByPrimitiveType,
                 PostProcess::JoinIdenticalVertices,
                 PostProcess::GenerateUVCoords,
+                PostProcess::GenerateNormals,
+                PostProcess::ForceGenerateNormals
             ],
         )?;
 
@@ -192,13 +195,18 @@ impl Object3D {
             |v: &Vector3D| Vector2::new(v.x, v.y);
 
         for mesh in &scene.meshes {
-            positions.extend(mesh.vertices.iter().map(VEC3_FROM_VEC3D));
-            if let Some(Some(dif_tex_coords)) = mesh.texture_coords.get(0) {
-                tex_coords.extend(dif_tex_coords.iter().map(VEC2_FROM_VEC3D));
+            for face in &mesh.faces {
+                if face.0.len() != 3 {
+                    continue; // ignore line and point primitives
+                }
+                positions.extend(face.0.iter().filter_map(|&idx| mesh.vertices.get(idx as usize).map(VEC3_FROM_VEC3D)));
+                if let Some(Some(dif_tex_coords)) = mesh.texture_coords.first() {
+                    tex_coords.extend(face.0.iter().filter_map(|&idx| dif_tex_coords.get(idx as usize).map(VEC2_FROM_VEC3D)));
+                }
+                normals.extend(face.0.iter().filter_map(|&idx| mesh.normals.get(idx as usize).map(VEC3_FROM_VEC3D)));
+                tangents.extend(face.0.iter().filter_map(|&idx| mesh.tangents.get(idx as usize).map(VEC3_FROM_VEC3D)));
+                bitangents.extend(face.0.iter().filter_map(|&idx| mesh.bitangents.get(idx as usize).map(VEC3_FROM_VEC3D)));
             }
-            normals.extend(mesh.normals.iter().map(VEC3_FROM_VEC3D));
-            tangents.extend(mesh.tangents.iter().map(VEC3_FROM_VEC3D));
-            bitangents.extend(mesh.bitangents.iter().map(VEC3_FROM_VEC3D));
         }
 
         let vertices = izip!(positions, tex_coords, normals, tangents, bitangents)
