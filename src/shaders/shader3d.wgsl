@@ -36,7 +36,7 @@ fn vs_main(in: VInput) -> VOutput {
     var out: VOutput;
 
     out.position = model.mvp_mat * vec4<f32>(in.vpos, 1.0);
-    out.color = vec4<f32>(in.vtex, 1.0, 1.0);
+    out.color = vec4<f32>(in.vnorm, 1.0);
 
     return out;
 }
