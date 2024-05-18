@@ -208,6 +208,18 @@ impl Object3D {
                 bitangents.extend(face.0.iter().filter_map(|&idx| mesh.bitangents.get(idx as usize).map(VEC3_FROM_VEC3D)));
             }
         }
+        
+        if tex_coords.len() != positions.len() {
+            tex_coords.resize(positions.len(), Vector2::zero());
+        }
+        
+        if tangents.len() != positions.len() {
+            tangents.resize(positions.len(), Vector3::zero());
+        }
+
+        if bitangents.len() != positions.len() {
+            bitangents.resize(positions.len(), Vector3::zero());
+        }
 
         let vertices = izip!(positions, tex_coords, normals, tangents, bitangents)
             .map(
