@@ -1,7 +1,9 @@
 struct VInput {
     @location(0) vpos: vec3<f32>,
-    @location(1) vcol: vec3<f32>,
+    @location(1) vtex: vec2<f32>,
     @location(2) vnorm: vec3<f32>,
+    @location(3) vtan: vec3<f32>,
+    @location(4) vbitan: vec3<f32>,
 }
 
 struct VOutput {
@@ -34,7 +36,7 @@ fn vs_main(in: VInput) -> VOutput {
     var out: VOutput;
 
     out.position = model.mvp_mat * vec4<f32>(in.vpos, 1.0);
-    out.color = vec4<f32>(in.vcol, 1.0);
+    out.color = vec4<f32>(in.vtex, 1.0, 1.0);
 
     return out;
 }

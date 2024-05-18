@@ -1,13 +1,17 @@
+use crate::components::camera::CameraData;
 use crate::components::{CameraComp, Component, TransformComp};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Matrix4, SquareMatrix, Vector2};
+use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3};
+use itertools::{izip, Itertools};
+use russimp::scene::PostProcess;
+use russimp::Vector3D;
 use std::any::{Any, TypeId};
 use std::cell::RefCell;
+use std::error::Error;
 use std::rc::Rc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BindGroupLayout, BufferUsages, Device, IndexFormat, RenderPass, RenderPipeline};
-use crate::components::camera::CameraData;
 
 pub struct ObjectRuntimeData {
     vertices_buf: wgpu::Buffer,
@@ -16,7 +20,7 @@ pub struct ObjectRuntimeData {
 
 pub struct ObjectVertexData<T> {
     vertices: Vec<T>,
-    indices: Vec<u32>,
+    indices: Option<Vec<u32>>,
 }
 
 #[derive(Copy, Clone)]
@@ -40,15 +44,13 @@ impl Drawable for Object2D {
             contents: bytemuck::cast_slice(self.data.vertices.as_slice()),
             usage: BufferUsages::VERTEX,
         });
-        let i_buffer = if self.data.indices.is_empty() {
-            None
-        } else {
-            Some(device.create_buffer_init(&BufferInitDescriptor {
+        let i_buffer = self.data.indices.as_ref().map(|indices| {
+            device.create_buffer_init(&BufferInitDescriptor {
                 label: Some("3D Object Index Buffer"),
-                contents: bytemuck::cast_slice(self.data.indices.as_slice()),
+                contents: bytemuck::cast_slice(indices.as_slice()),
                 usage: BufferUsages::INDEX,
-            }))
-        };
+            })
+        });
         self.runtime_data = Some(ObjectRuntimeData {
             vertices_buf: v_buffer,
             indices_buf: i_buffer,
@@ -77,10 +79,31 @@ impl Drawable for Object2D {
 }
 
 #[derive(Copy, Clone)]
-pub struct Vertex3D {
+pub struct SimpleVertex3D {
     pub position: [f32; 3],
-    pub color: [f32; 3],
     pub normal: [f32; 3],
+}
+
+impl SimpleVertex3D {
+    pub const fn upgrade(self) -> Vertex3D {
+        Vertex3D {
+            position: Vector3::new(self.position[0], self.position[1], self.position[2]),
+            tex_coord: Vector2::new(0.0, 0.0),
+            normal: Vector3::new(self.normal[0], self.normal[1], self.normal[2]),
+            tangent: Vector3::new(0.0, 0.0, 0.0),
+            bitangent: Vector3::new(0.0, 0.0, 0.0),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct Vertex3D {
+    pub position: Vector3<f32>,
+    pub tex_coord: Vector2<f32>,
+    pub normal: Vector3<f32>,
+    pub tangent: Vector3<f32>,
+    pub bitangent: Vector3<f32>,
 }
 
 unsafe impl Zeroable for Vertex3D {}
@@ -99,15 +122,13 @@ impl Drawable for Object3D {
             contents: bytemuck::cast_slice(self.data.vertices.as_slice()),
             usage: BufferUsages::VERTEX,
         });
-        let i_buffer = if self.data.indices.is_empty() {
-            None
-        } else {
-            Some(device.create_buffer_init(&BufferInitDescriptor {
+        let i_buffer = self.data.indices.as_ref().map(|indices| {
+            device.create_buffer_init(&BufferInitDescriptor {
                 label: Some("3D Object Index Buffer"),
-                contents: bytemuck::cast_slice(self.data.indices.as_slice()),
+                contents: bytemuck::cast_slice(indices.as_slice()),
                 usage: BufferUsages::INDEX,
-            }))
-        };
+            })
+        });
 
         self.runtime_data = Some(ObjectRuntimeData {
             vertices_buf: v_buffer,
@@ -128,9 +149,12 @@ impl Drawable for Object3D {
             .as_ref()
             .expect("Runtime data should have been setup before calling draw on an object.");
         rpass.set_vertex_buffer(0, runtime_data.vertices_buf.slice(..));
-        if let Some(indices) = runtime_data.indices_buf.as_ref() {
-            rpass.set_index_buffer(indices.slice(..), IndexFormat::Uint32);
-            rpass.draw_indexed(0..self.data.indices.len() as u32, 0, 0..1);
+        if let (Some(i_buffer), Some(indices)) = (
+            runtime_data.indices_buf.as_ref(),
+            self.data.indices.as_ref(),
+        ) {
+            rpass.set_index_buffer(i_buffer.slice(..), IndexFormat::Uint32);
+            rpass.draw_indexed(0..indices.len() as u32, 0, 0..1);
         } else {
             rpass.draw(0..self.data.vertices.len() as u32, 0..1)
         }
@@ -138,14 +162,64 @@ impl Drawable for Object3D {
 }
 
 impl Object3D {
-    pub fn new(vertices: Vec<Vertex3D>, indices: Option<Vec<u32>>) -> Object3D {
+    pub fn new(vertices: Vec<Vertex3D>, indices: Option<Vec<u32>>) -> Self {
         Object3D {
-            data: ObjectVertexData {
-                vertices,
-                indices: indices.unwrap_or_default(),
-            },
+            data: ObjectVertexData { vertices, indices },
             runtime_data: None,
         }
+    }
+
+    pub fn load(path: &str) -> Result<Self, Box<dyn Error>> {
+        let scene = russimp::scene::Scene::from_file(
+            path,
+            vec![
+                PostProcess::CalculateTangentSpace,
+                PostProcess::Triangulate,
+                PostProcess::JoinIdenticalVertices,
+                PostProcess::GenerateUVCoords,
+            ],
+        )?;
+
+        let mut positions: Vec<Vector3<f32>> = Vec::new();
+        let mut tex_coords: Vec<Vector2<f32>> = Vec::new();
+        let mut normals: Vec<Vector3<f32>> = Vec::new();
+        let mut tangents: Vec<Vector3<f32>> = Vec::new();
+        let mut bitangents: Vec<Vector3<f32>> = Vec::new();
+
+        const VEC3_FROM_VEC3D: fn(&Vector3D) -> Vector3<f32> =
+            |v: &Vector3D| Vector3::new(v.x, v.y, v.z);
+        const VEC2_FROM_VEC3D: fn(&Vector3D) -> Vector2<f32> =
+            |v: &Vector3D| Vector2::new(v.x, v.y);
+
+        for mesh in &scene.meshes {
+            positions.extend(mesh.vertices.iter().map(VEC3_FROM_VEC3D));
+            if let Some(Some(dif_tex_coords)) = mesh.texture_coords.get(0) {
+                tex_coords.extend(dif_tex_coords.iter().map(VEC2_FROM_VEC3D));
+            }
+            normals.extend(mesh.normals.iter().map(VEC3_FROM_VEC3D));
+            tangents.extend(mesh.tangents.iter().map(VEC3_FROM_VEC3D));
+            bitangents.extend(mesh.bitangents.iter().map(VEC3_FROM_VEC3D));
+        }
+
+        let vertices = izip!(positions, tex_coords, normals, tangents, bitangents)
+            .map(
+                |(position, tex_coord, normal, tangent, bitangent)| Vertex3D {
+                    position,
+                    tex_coord,
+                    normal,
+                    tangent,
+                    bitangent,
+                },
+            )
+            .collect();
+
+        Ok(Object3D {
+            data: ObjectVertexData {
+                vertices,
+                indices: None,
+            },
+            runtime_data: None,
+        })
     }
 }
 
@@ -174,16 +248,13 @@ impl GameObject {
         self.components.push(Rc::new(RefCell::new(comp)));
     }
 
-    pub fn get_component<C: Component + 'static>(
-        &mut self,
-    ) -> Option<Rc<RefCell<Box<C>>>> {
-        let comp = self.components
+    pub fn get_component<C: Component + 'static>(&mut self) -> Option<Rc<RefCell<Box<C>>>> {
+        let comp = self
+            .components
             .iter()
             .find(|&c| c.borrow().as_ref().type_id() == TypeId::of::<CameraComp>())
             .cloned();
-        unsafe {
-            std::mem::transmute::<_, Option<Rc<RefCell<Box<C>>>>>(comp)
-        }
+        unsafe { std::mem::transmute::<_, Option<Rc<RefCell<Box<C>>>>>(comp) }
     }
 }
 

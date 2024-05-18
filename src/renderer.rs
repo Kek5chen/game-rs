@@ -3,9 +3,10 @@ use crate::components::CameraComp;
 use crate::object::{ModelData, Vertex2D, Vertex3D};
 use crate::state::State;
 use crate::world::World;
-use cgmath::{Matrix4, Vector3};
+use cgmath::Matrix4;
 use log::{debug, error};
 use std::cell::RefCell;
+use std::mem::size_of;
 use std::rc::Rc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{
@@ -131,17 +132,27 @@ impl Renderer {
                                 shader_location: 0,
                             },
                             VertexAttribute {
-                                format: VertexFormat::Float32x3,
-                                offset: std::mem::size_of::<Vector3<f32>>() as u64,
+                                format: VertexFormat::Float32x2,
+                                offset: 3 * 4, // one vec3
                                 shader_location: 1,
                             },
                             VertexAttribute {
                                 format: VertexFormat::Float32x3,
-                                offset: std::mem::size_of::<Vector3<f32>>() as u64 * 2,
+                                offset: 3 * 4 + 2 * 4, // one vec3 and a vec2
                                 shader_location: 2,
                             },
+                            VertexAttribute {
+                                format: VertexFormat::Float32x3,
+                                offset: 2 * 4 * 3 + 2 * 4, // two vec3 and a vec2
+                                shader_location: 3,
+                            },
+                            VertexAttribute {
+                                format: VertexFormat::Float32x3,
+                                offset: 3 * 4 * 3 + 2 * 4, // three vec3 and a vec2
+                                shader_location: 4,
+                            },
                         ],
-                        array_stride: std::mem::size_of::<Vertex3D>() as u64,
+                        array_stride: size_of::<Vertex3D>() as u64,
                     }],
                 },
                 primitive: wgpu::PrimitiveState::default(),

@@ -1,4 +1,4 @@
-use crate::object::{Vertex2D, Vertex3D};
+use crate::object::{SimpleVertex3D, Vertex2D, Vertex3D};
 
 macro_rules! v3 {
     ([$x:expr, $y:expr, $z: expr], [$r: expr, $g: expr, $b: expr], [$nx: expr, $ny: expr, $nz: expr]) => {
@@ -27,48 +27,48 @@ pub const TRIANGLE2D: [Vertex2D; 3] = [
 
 #[rustfmt::skip]
 pub const TRIANGLE: [Vertex3D; 3] = [
-    Vertex3D { position: [0.0, 1.0, 0.0], color: [1.0, 0.0, 0.0], normal: [0.0, 0.0, -1.0] },
-    Vertex3D { position: [0.5, 0.0, 0.0], color: [1.0, 0.0, 0.0], normal: [0.0, 0.0, -1.0] },
-    Vertex3D { position: [-0.5, 0.0, 0.0], color: [1.0, 0.0, 0.0], normal: [0.0, 0.0, -1.0] },
+    SimpleVertex3D { position: [0.0, 1.0, 0.0], normal: [0.0, 0.0, -1.0] }.upgrade(),
+    SimpleVertex3D { position: [0.5, 0.0, 0.0], normal: [0.0, 0.0, -1.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5, 0.0, 0.0], normal: [0.0, 0.0, -1.0] }.upgrade(),
 ];
 
 #[rustfmt::skip]
 pub const CUBE: [Vertex3D; 24] = [  // 4 vertices * 6 faces = 24 vertices
     // Front face (z = -0.5)
-    Vertex3D { position: [-0.5,  0.5, -0.5], color: [1.0, 0.0, 0.0], normal: [0.0, 0.0, -1.0] },
-    Vertex3D { position: [ 0.5,  0.5, -0.5], color: [1.0, 0.0, 0.0], normal: [0.0, 0.0, -1.0] },
-    Vertex3D { position: [-0.5, -0.5, -0.5], color: [1.0, 0.0, 0.0], normal: [0.0, 0.0, -1.0] },
-    Vertex3D { position: [ 0.5, -0.5, -0.5], color: [1.0, 0.0, 0.0], normal: [0.0, 0.0, -1.0] },
+    SimpleVertex3D { position: [-0.5,  0.5, -0.5], normal: [0.0, 0.0, -1.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5,  0.5, -0.5], normal: [0.0, 0.0, -1.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5, -0.5, -0.5], normal: [0.0, 0.0, -1.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5, -0.5, -0.5], normal: [0.0, 0.0, -1.0] }.upgrade(),
 
     // Back face (z = 0.5)
-    Vertex3D { position: [-0.5,  0.5, 0.5], color: [0.0, 1.0, 0.0], normal: [0.0, 0.0, 1.0] },
-    Vertex3D { position: [ 0.5,  0.5, 0.5], color: [0.0, 1.0, 0.0], normal: [0.0, 0.0, 1.0] },
-    Vertex3D { position: [-0.5, -0.5, 0.5], color: [0.0, 1.0, 0.0], normal: [0.0, 0.0, 1.0] },
-    Vertex3D { position: [ 0.5, -0.5, 0.5], color: [0.0, 1.0, 0.0], normal: [0.0, 0.0, 1.0] },
+    SimpleVertex3D { position: [-0.5,  0.5, 0.5], normal: [0.0, 0.0, 1.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5,  0.5, 0.5], normal: [0.0, 0.0, 1.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5, -0.5, 0.5], normal: [0.0, 0.0, 1.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5, -0.5, 0.5], normal: [0.0, 0.0, 1.0] }.upgrade(),
 
     // Top face (y = 0.5)
-    Vertex3D { position: [-0.5,  0.5, -0.5], color: [0.0, 0.0, 1.0], normal: [0.0, 1.0, 0.0] },
-    Vertex3D { position: [ 0.5,  0.5, -0.5], color: [0.0, 0.0, 1.0], normal: [0.0, 1.0, 0.0] },
-    Vertex3D { position: [-0.5,  0.5,  0.5], color: [0.0, 0.0, 1.0], normal: [0.0, 1.0, 0.0] },
-    Vertex3D { position: [ 0.5,  0.5,  0.5], color: [0.0, 0.0, 1.0], normal: [0.0, 1.0, 0.0] },
+    SimpleVertex3D { position: [-0.5,  0.5, -0.5], normal: [0.0, 1.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5,  0.5, -0.5], normal: [0.0, 1.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5,  0.5,  0.5], normal: [0.0, 1.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5,  0.5,  0.5], normal: [0.0, 1.0, 0.0] }.upgrade(),
 
     // Bottom face (y = -0.5)
-    Vertex3D { position: [-0.5, -0.5, -0.5], color: [1.0, 1.0, 0.0], normal: [0.0, -1.0, 0.0] },
-    Vertex3D { position: [ 0.5, -0.5, -0.5], color: [1.0, 1.0, 0.0], normal: [0.0, -1.0, 0.0] },
-    Vertex3D { position: [-0.5, -0.5,  0.5], color: [1.0, 1.0, 0.0], normal: [0.0, -1.0, 0.0] },
-    Vertex3D { position: [ 0.5, -0.5,  0.5], color: [1.0, 1.0, 0.0], normal: [0.0, -1.0, 0.0] },
+    SimpleVertex3D { position: [-0.5, -0.5, -0.5], normal: [0.0, -1.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5, -0.5, -0.5], normal: [0.0, -1.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5, -0.5,  0.5], normal: [0.0, -1.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5, -0.5,  0.5], normal: [0.0, -1.0, 0.0] }.upgrade(),
 
     // Right face (x = 0.5)
-    Vertex3D { position: [ 0.5,  0.5, -0.5], color: [0.0, 1.0, 1.0], normal: [1.0, 0.0, 0.0] },
-    Vertex3D { position: [ 0.5,  0.5,  0.5], color: [0.0, 1.0, 1.0], normal: [1.0, 0.0, 0.0] },
-    Vertex3D { position: [ 0.5, -0.5, -0.5], color: [0.0, 1.0, 1.0], normal: [1.0, 0.0, 0.0] },
-    Vertex3D { position: [ 0.5, -0.5,  0.5], color: [0.0, 1.0, 1.0], normal: [1.0, 0.0, 0.0] },
+    SimpleVertex3D { position: [ 0.5,  0.5, -0.5], normal: [1.0, 0.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5,  0.5,  0.5], normal: [1.0, 0.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5, -0.5, -0.5], normal: [1.0, 0.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [ 0.5, -0.5,  0.5], normal: [1.0, 0.0, 0.0] }.upgrade(),
 
     // Left face (x = -0.5)
-    Vertex3D { position: [-0.5,  0.5, -0.5], color: [1.0, 0.0, 1.0], normal: [-1.0, 0.0, 0.0] },
-    Vertex3D { position: [-0.5,  0.5,  0.5], color: [1.0, 0.0, 1.0], normal: [-1.0, 0.0, 0.0] },
-    Vertex3D { position: [-0.5, -0.5, -0.5], color: [1.0, 0.0, 1.0], normal: [-1.0, 0.0, 0.0] },
-    Vertex3D { position: [-0.5, -0.5,  0.5], color: [1.0, 0.0, 1.0], normal: [-1.0, 0.0, 0.0] },
+    SimpleVertex3D { position: [-0.5,  0.5, -0.5], normal: [-1.0, 0.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5,  0.5,  0.5], normal: [-1.0, 0.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5, -0.5, -0.5], normal: [-1.0, 0.0, 0.0] }.upgrade(),
+    SimpleVertex3D { position: [-0.5, -0.5,  0.5], normal: [-1.0, 0.0, 0.0] }.upgrade(),
 ];
 
 #[rustfmt::skip]

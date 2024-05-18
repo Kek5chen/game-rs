@@ -13,3 +13,5 @@ env_logger = { version = "0.11.3", features = ["auto-color"] }
 bytemuck = "1.15.0"
 log = "0.4.21"
 cgmath = "0.18.0"
+russimp = "3.2.0"
+itertools = "0.13.0"
