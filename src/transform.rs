@@ -25,7 +25,7 @@ impl Transform {
             invert_position: false,
         }
     }
-    
+
     pub fn set_position(&mut self, position: Vector3<f32>) {
         self.pos = position;
         self.recalculate_pos_matrix();
@@ -35,7 +35,7 @@ impl Transform {
     pub fn position(&self) -> &Vector3<f32> {
         &self.pos
     }
-    
+
     pub fn set_invert_position(&mut self, invert: bool) {
         self.invert_position = invert;
     }

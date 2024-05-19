@@ -1,15 +1,5 @@
 use crate::object::{SimpleVertex3D, Vertex2D, Vertex3D};
 
-macro_rules! v3 {
-    ([$x:expr, $y:expr, $z: expr], [$r: expr, $g: expr, $b: expr], [$nx: expr, $ny: expr, $nz: expr]) => {
-        Vertex3D {
-            position: cgmath::vec3($x, $y, $z),
-            color: cgmath::vec3($r, $g, $b),
-            normal: cgmath::vec3($nx, $ny, $nz),
-        }
-    };
-}
-
 macro_rules! v2 {
     ($x:expr, $y:expr) => {
         Vertex2D {
@@ -18,6 +8,7 @@ macro_rules! v2 {
     };
 }
 
+#[allow(dead_code)]
 #[rustfmt::skip]
 pub const TRIANGLE2D: [Vertex2D; 3] = [
     v2!(0.0, 1.0),
@@ -25,6 +16,7 @@ pub const TRIANGLE2D: [Vertex2D; 3] = [
     v2!(-1.0, -1.0)
 ];
 
+#[allow(dead_code)]
 #[rustfmt::skip]
 pub const TRIANGLE: [Vertex3D; 3] = [
     SimpleVertex3D { position: [0.0, 1.0, 0.0], normal: [0.0, 0.0, -1.0] }.upgrade(),
@@ -32,6 +24,7 @@ pub const TRIANGLE: [Vertex3D; 3] = [
     SimpleVertex3D { position: [-0.5, 0.0, 0.0], normal: [0.0, 0.0, -1.0] }.upgrade(),
 ];
 
+#[allow(dead_code)]
 #[rustfmt::skip]
 pub const CUBE: [Vertex3D; 24] = [  // 4 vertices * 6 faces = 24 vertices
     // Front face (z = -0.5)
@@ -71,6 +64,7 @@ pub const CUBE: [Vertex3D; 24] = [  // 4 vertices * 6 faces = 24 vertices
     SimpleVertex3D { position: [-0.5, -0.5,  0.5], normal: [-1.0, 0.0, 0.0] }.upgrade(),
 ];
 
+#[allow(dead_code)]
 #[rustfmt::skip]
 pub const CUBE_INDICES: [u32; 6 * 6] = [
     // Front face

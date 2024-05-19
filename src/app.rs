@@ -1,12 +1,14 @@
-use crate::renderer::Renderer;
-use crate::world::World;
 use std::error::Error;
+
 use winit::dpi::{PhysicalSize, Size};
 use winit::error::EventLoopError;
 use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
+
+use crate::renderer::Renderer;
+use crate::world::World;
 
 pub struct App {
     window_builder: Option<WindowBuilder>,

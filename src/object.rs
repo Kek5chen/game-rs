@@ -1,17 +1,19 @@
-use crate::components::camera::CameraData;
-use crate::components::{CameraComp, Component};
-use crate::drawable::Drawable;
-use bytemuck::{Pod, Zeroable};
-use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
-use itertools::{izip, Itertools};
-use russimp::scene::PostProcess;
-use russimp::Vector3D;
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
+
+use bytemuck::{Pod, Zeroable};
+use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
+use itertools::{izip};
+use russimp::scene::PostProcess;
+use russimp::Vector3D;
 use wgpu::{BindGroupLayout, BufferUsages, Device, IndexFormat, RenderPass, RenderPipeline};
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
+
+use crate::components::{CameraComp, Component};
+use crate::components::camera::CameraData;
+use crate::drawable::Drawable;
 use crate::transform::Transform;
 
 pub struct ObjectRuntimeData {
@@ -181,7 +183,7 @@ impl Object3D {
                 PostProcess::JoinIdenticalVertices,
                 PostProcess::GenerateUVCoords,
                 PostProcess::GenerateNormals,
-                PostProcess::ForceGenerateNormals
+                PostProcess::ForceGenerateNormals,
             ],
         )?;
 
@@ -201,20 +203,40 @@ impl Object3D {
                 if face.0.len() != 3 {
                     continue; // ignore line and point primitives
                 }
-                positions.extend(face.0.iter().filter_map(|&idx| mesh.vertices.get(idx as usize).map(VEC3_FROM_VEC3D)));
+                positions.extend(
+                    face.0
+                        .iter()
+                        .filter_map(|&idx| mesh.vertices.get(idx as usize).map(VEC3_FROM_VEC3D)),
+                );
                 if let Some(Some(dif_tex_coords)) = mesh.texture_coords.first() {
-                    tex_coords.extend(face.0.iter().filter_map(|&idx| dif_tex_coords.get(idx as usize).map(VEC2_FROM_VEC3D)));
+                    tex_coords.extend(
+                        face.0.iter().filter_map(|&idx| {
+                            dif_tex_coords.get(idx as usize).map(VEC2_FROM_VEC3D)
+                        }),
+                    );
                 }
-                normals.extend(face.0.iter().filter_map(|&idx| mesh.normals.get(idx as usize).map(VEC3_FROM_VEC3D)));
-                tangents.extend(face.0.iter().filter_map(|&idx| mesh.tangents.get(idx as usize).map(VEC3_FROM_VEC3D)));
-                bitangents.extend(face.0.iter().filter_map(|&idx| mesh.bitangents.get(idx as usize).map(VEC3_FROM_VEC3D)));
+                normals.extend(
+                    face.0
+                        .iter()
+                        .filter_map(|&idx| mesh.normals.get(idx as usize).map(VEC3_FROM_VEC3D)),
+                );
+                tangents.extend(
+                    face.0
+                        .iter()
+                        .filter_map(|&idx| mesh.tangents.get(idx as usize).map(VEC3_FROM_VEC3D)),
+                );
+                bitangents.extend(
+                    face.0
+                        .iter()
+                        .filter_map(|&idx| mesh.bitangents.get(idx as usize).map(VEC3_FROM_VEC3D)),
+                );
             }
         }
-        
+
         if tex_coords.len() != positions.len() {
             tex_coords.resize(positions.len(), Vector2::zero());
         }
-        
+
         if tangents.len() != positions.len() {
             tangents.resize(positions.len(), Vector3::zero());
         }

@@ -1,25 +1,27 @@
-use crate::components::camera::CameraData;
-use crate::components::CameraComp;
-use crate::object::{ModelData, Vertex2D, Vertex3D};
-use crate::state::State;
-use crate::world::World;
-use cgmath::Matrix4;
-use log::{debug, error};
 use std::cell::RefCell;
 use std::mem::size_of;
 use std::rc::Rc;
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
+
+use cgmath::Matrix4;
+use log::{debug, error};
 use wgpu::{
-    include_wgsl, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-    BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType,
-    BufferUsages, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor,
-    CompareFunction, DepthBiasState, FragmentState, Id, LoadOp, MultisampleState, Operations,
+    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages,
+    Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction,
+    DepthBiasState, FragmentState, Id, include_wgsl, LoadOp, MultisampleState, Operations,
     PipelineLayout, RenderPassColorAttachment, RenderPassDepthStencilAttachment,
     RenderPassDescriptor, RenderPipeline, ShaderStages, StencilState, StoreOp, SurfaceError,
     SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute,
     VertexBufferLayout, VertexFormat, VertexStepMode,
 };
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::window::Window;
+
+use crate::components::camera::CameraData;
+use crate::components::CameraComp;
+use crate::object::{ModelData, Vertex2D, Vertex3D};
+use crate::state::State;
+use crate::world::World;
 
 pub struct RenderContext {
     pub output: SurfaceTexture,

@@ -1,10 +1,10 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-use bytemuck::{Pod, Zeroable};
-use cgmath::{Deg, Matrix4, SquareMatrix, Vector3, Zero};
 use crate::components::Component;
 use crate::object::GameObject;
 use crate::transform::Transform;
+use bytemuck::{Pod, Zeroable};
+use cgmath::{Deg, Matrix4, SquareMatrix, Vector3, Zero};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct CameraComp {
     pub projection: Matrix4<f32>,
@@ -21,8 +21,7 @@ impl Component for CameraComp {
         parent.transform.set_invert_position(true);
     }
 
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32) {
-    }
+    fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32) {}
 }
 
 // TODO: Remove manual padding somehow?
