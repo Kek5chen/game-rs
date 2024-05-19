@@ -21,7 +21,7 @@ impl Component for CameraComp {
         parent.transform.set_invert_position(true);
     }
 
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>, deltaTime: f32) {
+    fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32) {
     }
 }
 
