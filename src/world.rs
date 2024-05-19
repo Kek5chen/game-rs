@@ -57,7 +57,8 @@ impl World {
                 (*object_ptr).transform.update(object.clone(), self.last_frame_time.elapsed().as_secs_f32());
                 for comp in &(*object_ptr).components {
                     let comp_ptr = comp.as_ptr();
-                    (*comp_ptr).update(object.clone(), self.last_frame_time.elapsed().as_secs_f32())
+                    let delta_time = self.last_frame_time.elapsed().as_secs_f32();
+                    (*comp_ptr).update(object.clone(), delta_time)
                 }
             }
         }
