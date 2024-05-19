@@ -1,4 +1,4 @@
-use crate::components::{CameraComp, Component, TransformComp};
+use crate::components::{CameraComp, Component, Transform};
 use crate::object::GameObject;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -25,15 +25,10 @@ impl World {
         let mut obj = GameObject {
             name: name.to_owned(),
             children: vec![],
-            transform: TransformComp::new(),
+            transform: Transform::new(),
             drawable: None,
             components: vec![],
         };
-
-        let obj_ptr: *mut GameObject = &mut obj;
-        unsafe {
-            obj.transform.init(&mut *obj_ptr);
-        }
 
         self.objects.push(Rc::new(RefCell::new(obj)));
         self.objects.last().cloned().unwrap()

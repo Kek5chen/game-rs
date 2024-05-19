@@ -1,5 +1,5 @@
 use crate::components::camera::CameraData;
-use crate::components::{CameraComp, Component, TransformComp};
+use crate::components::{CameraComp, Component, Transform};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
 use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
@@ -247,7 +247,7 @@ impl Object3D {
 pub struct GameObject {
     pub name: String,
     pub children: Vec<Rc<RefCell<GameObject>>>,
-    pub transform: TransformComp,
+    pub transform: Transform,
     pub drawable: Option<Box<dyn Drawable>>,
     pub components: Vec<Rc<RefCell<Box<dyn Component>>>>,
 }

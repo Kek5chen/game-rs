@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 #[repr(C)]
-pub struct TransformComp {
+pub struct Transform {
     pos: Vector3<f32>,
     rot: Vector3<f32>,
     scale: Vector3<f32>,
@@ -16,7 +16,7 @@ pub struct TransformComp {
     invert_position: bool,
 }
 
-impl TransformComp {
+impl Transform {
     pub fn set_position(&mut self, position: Vector3<f32>) {
         self.pos = position;
         self.recalculate_pos_matrix();

@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use bytemuck::{Pod, Zeroable};
 use cgmath::{Deg, Matrix4, SquareMatrix, Vector3, Zero};
-use crate::components::{Component, TransformComp};
+use crate::components::{Component, Transform};
 use crate::object::GameObject;
 
 pub struct CameraComp {
@@ -53,7 +53,7 @@ impl CameraData {
             proj_view_mat: Matrix4::identity(),
         }
     }
-    pub fn update(&mut self, proj_matrix: &Matrix4<f32>, cam_transform: &TransformComp) {
+    pub fn update(&mut self, proj_matrix: &Matrix4<f32>, cam_transform: &Transform) {
         self.pos = *cam_transform.position();
         self.rot = *cam_transform.rotation();
         self.scale = *cam_transform.scale();

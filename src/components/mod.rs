@@ -4,7 +4,7 @@ pub mod transform;
 
 pub use camera::CameraComp;
 pub use gravity::GravityComp;
-pub use transform::TransformComp;
+pub use transform::Transform;
 
 use crate::object::GameObject;
 use std::any::Any;
