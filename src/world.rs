@@ -22,7 +22,7 @@ impl World {
     }
 
     pub fn new_object(&mut self, name: &str) -> Rc<RefCell<GameObject>> {
-        let mut obj = GameObject {
+        let obj = GameObject {
             name: name.to_owned(),
             children: vec![],
             transform: Transform::new(),
@@ -54,7 +54,6 @@ impl World {
         unsafe {
             for object in &self.objects {
                 let object_ptr = object.as_ptr();
-                (*object_ptr).transform.update(object.clone(), self.last_frame_time.elapsed().as_secs_f32());
                 for comp in &(*object_ptr).components {
                     let comp_ptr = comp.as_ptr();
                     let delta_time = self.last_frame_time.elapsed().as_secs_f32();

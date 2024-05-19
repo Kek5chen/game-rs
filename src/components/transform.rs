@@ -1,8 +1,4 @@
-use crate::components::Component;
-use crate::object::GameObject;
 use cgmath::{Deg, Matrix4, SquareMatrix, Vector3, Zero};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[repr(C)]
 pub struct Transform {
@@ -17,6 +13,19 @@ pub struct Transform {
 }
 
 impl Transform {
+    pub fn new() -> Self {
+        Transform {
+            pos: Vector3::zero(),
+            rot: Vector3::zero(),
+            scale: Vector3::new(1.0, 1.0, 1.0),
+            pos_mat: Matrix4::identity(),
+            rot_mat: Matrix4::identity(),
+            scale_mat: Matrix4::identity(),
+            combined_mat: Matrix4::identity(),
+            invert_position: false,
+        }
+    }
+    
     pub fn set_position(&mut self, position: Vector3<f32>) {
         self.pos = position;
         self.recalculate_pos_matrix();
@@ -100,23 +109,4 @@ impl Transform {
     pub fn full_matrix(&self) -> &Matrix4<f32> {
         &self.combined_mat
     }
-}
-
-impl Component for TransformComp {
-    fn new() -> Self {
-        TransformComp {
-            pos: Vector3::zero(),
-            rot: Vector3::zero(),
-            scale: Vector3::new(1.0, 1.0, 1.0),
-            pos_mat: Matrix4::identity(),
-            rot_mat: Matrix4::identity(),
-            scale_mat: Matrix4::identity(),
-            combined_mat: Matrix4::identity(),
-            invert_position: false,
-        }
-    }
-
-    fn init(&mut self, parent: &mut GameObject) {}
-
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>, deltaTime: f32) {}
 }
