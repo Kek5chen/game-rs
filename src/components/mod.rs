@@ -1,9 +1,10 @@
 pub mod camera;
 pub mod gravity;
-pub mod transform;
+pub mod rotate;
 
 pub use camera::CameraComp;
 pub use gravity::GravityComp;
+pub use rotate::RotateComponent;
 
 use crate::object::GameObject;
 use std::any::Any;
