@@ -2,8 +2,9 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use bytemuck::{Pod, Zeroable};
 use cgmath::{Deg, Matrix4, SquareMatrix, Vector3, Zero};
-use crate::components::{Component, Transform};
+use crate::components::Component;
 use crate::object::GameObject;
+use crate::transform::Transform;
 
 pub struct CameraComp {
     pub projection: Matrix4<f32>,

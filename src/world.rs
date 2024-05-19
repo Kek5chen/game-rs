@@ -1,8 +1,9 @@
-use crate::components::{CameraComp, Component, Transform};
+use crate::components::{CameraComp};
 use crate::object::GameObject;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 use std::time::Instant;
+use crate::transform::Transform;
 
 pub struct World {
     pub objects: Vec<Rc<RefCell<GameObject>>>,

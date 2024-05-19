@@ -6,6 +6,7 @@ mod object;
 mod renderer;
 mod state;
 mod world;
+mod transform;
 
 use crate::app::App;
 use crate::buffer::{CUBE, CUBE_INDICES};

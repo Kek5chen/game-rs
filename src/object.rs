@@ -1,5 +1,5 @@
 use crate::components::camera::CameraData;
-use crate::components::{CameraComp, Component, Transform};
+use crate::components::{CameraComp, Component};
 use crate::drawable::Drawable;
 use bytemuck::{Pod, Zeroable};
 use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
@@ -12,6 +12,7 @@ use std::error::Error;
 use std::rc::Rc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BindGroupLayout, BufferUsages, Device, IndexFormat, RenderPass, RenderPipeline};
+use crate::transform::Transform;
 
 pub struct ObjectRuntimeData {
     vertices_buf: wgpu::Buffer,
