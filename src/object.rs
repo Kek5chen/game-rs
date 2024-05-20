@@ -1,24 +1,25 @@
 use std::any::TypeId;
 use std::cell::RefCell;
-use std::error::Error;
 use std::rc::Rc;
 
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
-use itertools::{izip};
-use russimp::scene::PostProcess;
-use russimp::Vector3D;
-use wgpu::{BindGroupLayout, BufferUsages, Device, IndexFormat, RenderPass, RenderPipeline};
+use cgmath::{Matrix4, SquareMatrix, Vector2, Vector3};
+use wgpu::{
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device, IndexFormat, Queue,
+    RenderPass, RenderPipeline,
+};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use crate::components::{CameraComp, Component};
-use crate::components::camera::CameraData;
 use crate::drawable::Drawable;
 use crate::transform::Transform;
 
 pub struct ObjectRuntimeData {
     vertices_buf: wgpu::Buffer,
     indices_buf: Option<wgpu::Buffer>,
+    model_data: ModelData,
+    model_data_buffer: wgpu::Buffer,
+    bind_group: wgpu::BindGroup,
 }
 
 pub struct ObjectVertexData<T> {
@@ -100,7 +101,7 @@ pub struct Object3D {
 }
 
 impl Drawable for Object3D {
-    fn setup(&mut self, device: &Device) {
+    fn setup(&mut self, device: &Device, bind_group_layout: &BindGroupLayout) {
         let v_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("3D Object Vertex Buffer"),
             contents: bytemuck::cast_slice(self.data.vertices.as_slice()),
@@ -113,11 +114,40 @@ impl Drawable for Object3D {
                 usage: BufferUsages::INDEX,
             })
         });
-
+        let model_data = ModelData::empty();
+        let model_data_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Model Buffer"),
+            contents: bytemuck::cast_slice(&[model_data]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        });
+        let bind_group = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Model Bind Group"),
+            layout: &bind_group_layout,
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: model_data_buffer.as_entire_binding(),
+            }],
+        });
         self.runtime_data = Some(ObjectRuntimeData {
             vertices_buf: v_buffer,
             indices_buf: i_buffer,
+            model_data,
+            model_data_buffer,
+            bind_group,
         });
+    }
+
+    fn update(&mut self, parent: Rc<RefCell<GameObject>>, queue: &Queue) {
+        let runtime_data = self
+            .runtime_data
+            .as_mut()
+            .expect("Runtime data should have been setup before calling update on an object.");
+        runtime_data.model_data.update(parent.clone());
+        queue.write_buffer(
+            &runtime_data.model_data_buffer,
+            0,
+            bytemuck::cast_slice(&[runtime_data.model_data]),
+        )
     }
 
     fn draw<'a, 'b>(
@@ -132,6 +162,7 @@ impl Drawable for Object3D {
             .runtime_data
             .as_ref()
             .expect("Runtime data should have been setup before calling draw on an object.");
+        rpass.set_bind_group(1, &runtime_data.bind_group, &[]);
         rpass.set_vertex_buffer(0, runtime_data.vertices_buf.slice(..));
         if let (Some(i_buffer), Some(indices)) = (
             runtime_data.indices_buf.as_ref(),
@@ -192,21 +223,18 @@ impl GameObject {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ModelData {
-    model_mat: Matrix4<f32>,
-    mvp_mat: Matrix4<f32>,
+    pub model_mat: Matrix4<f32>,
 }
 
 impl ModelData {
     pub fn empty() -> Self {
         ModelData {
             model_mat: Matrix4::identity(),
-            mvp_mat: Matrix4::identity(),
         }
     }
 
-    pub fn update(&mut self, object: &mut GameObject, camera_data: &CameraData) {
-        self.model_mat = *object.transform.full_matrix();
-        self.mvp_mat = camera_data.proj_view_mat * self.model_mat;
+    pub fn update(&mut self, object: Rc<RefCell<GameObject>>) {
+        self.model_mat = *object.borrow_mut().transform.full_matrix();
     }
 }
 

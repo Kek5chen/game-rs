@@ -37,9 +37,8 @@ pub struct Renderer {
     pipeline_3d_id: Id<RenderPipeline>,
     uniform_bind_group_layout: BindGroupLayout,
     camera_uniform_data: Box<CameraData>,
-    model_uniform_data: Box<ModelData>,
     camera_uniform_buffer: Buffer,
-    model_uniform_buffer: Buffer,
+    pub(crate) model_bind_group_layout: BindGroupLayout,
     uniform_bind_group: BindGroup,
 }
 
@@ -103,13 +102,14 @@ impl Renderer {
     fn make_3d_pipeline(
         state: &State,
         uniform_bind_group_layout: &BindGroupLayout,
+        model_bind_group_layout: &BindGroupLayout,
     ) -> (PipelineLayout, RenderPipeline) {
         let pipeline_3d_layout =
             state
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("3D Render Pipeline"),
-                    bind_group_layouts: &[uniform_bind_group_layout],
+                    bind_group_layouts: &[uniform_bind_group_layout, model_bind_group_layout],
                     push_constant_ranges: &[],
                 });
 
@@ -184,35 +184,22 @@ impl Renderer {
     fn create_uniform_buffer(
         state: &State,
         camera_data: &CameraData,
-        model_data: &ModelData,
-    ) -> (BindGroupLayout, Buffer, Buffer, BindGroup) {
+    ) -> (BindGroupLayout, Buffer, BindGroup) {
         let uniform_bind_group_layout =
             state
                 .device
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
                     label: Some("Uniform Bind Group Layout"),
-                    entries: &[
-                        BindGroupLayoutEntry {
-                            binding: 0,
-                            visibility: ShaderStages::VERTEX,
-                            ty: BindingType::Buffer {
-                                ty: BufferBindingType::Uniform,
-                                has_dynamic_offset: false,
-                                min_binding_size: None,
-                            },
-                            count: None,
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::VERTEX,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
                         },
-                        BindGroupLayoutEntry {
-                            binding: 1,
-                            visibility: ShaderStages::VERTEX,
-                            ty: BindingType::Buffer {
-                                ty: BufferBindingType::Uniform,
-                                has_dynamic_offset: false,
-                                min_binding_size: None,
-                            },
-                            count: None,
-                        },
-                    ],
+                        count: None,
+                    }],
                 });
 
         let uniform_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
@@ -221,31 +208,18 @@ impl Renderer {
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 
-        let model_uniform_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Model Uniform Buffer"),
-            contents: bytemuck::cast_slice(&[*model_data]),
-            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-        });
-
         let uniform_bind_group = state.device.create_bind_group(&BindGroupDescriptor {
             label: Some("Uniform Bind Group"),
             layout: &uniform_bind_group_layout,
-            entries: &[
-                BindGroupEntry {
-                    binding: 0,
-                    resource: uniform_buffer.as_entire_binding(),
-                },
-                BindGroupEntry {
-                    binding: 1,
-                    resource: model_uniform_buffer.as_entire_binding(),
-                },
-            ],
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
         });
 
         (
             uniform_bind_group_layout,
             uniform_buffer,
-            model_uniform_buffer,
             uniform_bind_group,
         )
     }
@@ -254,16 +228,27 @@ impl Renderer {
         let state = State::new(&window).await;
 
         let camera_data = Box::new(CameraData::empty());
-        let model_data = Box::new(ModelData::empty());
-        let (
-            uniform_bind_group_layout,
-            camera_uniform_buffer,
-            model_uniform_buffer,
-            uniform_bind_group,
-        ) = Self::create_uniform_buffer(&state, &camera_data, &model_data);
+        let (uniform_bind_group_layout, camera_uniform_buffer, uniform_bind_group) =
+            Self::create_uniform_buffer(&state, &camera_data);
+        let model_bind_group_layout =
+            state
+                .device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: Some("Model Bind Group Layout"),
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::VERTEX,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
         let (pipeline_2d_layout, pipeline_2d) = Self::make_2d_pipeline(&state);
         let (pipeline_3d_layout, pipeline_3d) =
-            Self::make_3d_pipeline(&state, &uniform_bind_group_layout);
+            Self::make_3d_pipeline(&state, &uniform_bind_group_layout, &model_bind_group_layout);
         Renderer {
             window,
             pipeline_2d_id: pipeline_2d.global_id(),
@@ -271,10 +256,9 @@ impl Renderer {
             pipelines: vec![pipeline_2d, pipeline_3d],
             uniform_bind_group_layout,
             camera_uniform_data: camera_data,
-            model_uniform_data: model_data,
             camera_uniform_buffer,
-            model_uniform_buffer,
             uniform_bind_group,
+            model_bind_group_layout,
             state,
         }
     }
@@ -371,9 +355,6 @@ impl Renderer {
             bytemuck::cast_slice(&[*self.camera_uniform_data]),
         );
 
-        let model_uniform_data: *mut ModelData = &mut *self.model_uniform_data;
-        let model_uniform_buffer: *mut Buffer = &mut self.model_uniform_buffer;
-
         let pipeline = self.find_pipeline(self.pipeline_3d_id).unwrap();
 
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
@@ -403,14 +384,9 @@ impl Renderer {
 
         unsafe {
             for object in &world.objects {
-                let object = object.as_ptr();
-                for drawable in &mut (*object).drawable {
-                    (*model_uniform_data).update(&mut *object, &self.camera_uniform_data);
-                    self.state.queue.write_buffer(
-                        &*model_uniform_buffer,
-                        0,
-                        bytemuck::cast_slice(&[*model_uniform_data]),
-                    );
+                let object_ptr = object.as_ptr();
+                for drawable in &mut (*object_ptr).drawable {
+                    drawable.update(object.clone(), &self.state.queue);
                     drawable.draw(&mut rpass, pipeline, &self.uniform_bind_group_layout);
                 }
             }

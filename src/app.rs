@@ -72,7 +72,7 @@ impl App {
 
         for obj in &mut world.objects {
             if let Some(ref mut drawable) = obj.borrow_mut().drawable {
-                drawable.setup(&renderer.state.device)
+                drawable.setup(&renderer.state.device, &renderer.model_bind_group_layout)
             }
         }
 
