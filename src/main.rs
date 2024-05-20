@@ -4,8 +4,8 @@ mod components;
 mod drawable;
 mod object;
 mod renderer;
+mod scene_loader;
 mod state;
-mod world;
 mod transform;
 
 use crate::app::App;
@@ -16,6 +16,7 @@ use env_logger::Env;
 use log::{error, LevelFilter};
 use std::error::Error;
 use cgmath::Vector3;
+mod world;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
