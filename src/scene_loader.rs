@@ -1,8 +1,9 @@
 use std::cell::RefCell;
 use std::error::Error;
+use std::f32::consts::PI;
 use std::rc::Rc;
 
-use cgmath::{Vector2, Vector3, Zero};
+use cgmath::{InnerSpace, Matrix3, Matrix4, Vector2, Vector3, Zero};
 use itertools::izip;
 use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
@@ -47,7 +48,7 @@ impl SceneLoader {
         node: &Rc<Node>,
         node_obj: Rc<RefCell<GameObject>>,
     ) {
-        Self::load_data(scene, &node, node_obj.clone());
+        Self::load_data(scene, node, node_obj.clone());
         for child in node.children.borrow().iter() {
             let obj = world.new_object(&child.name);
             node_obj.borrow_mut().add_child(obj.clone());
@@ -101,6 +102,42 @@ impl SceneLoader {
         if a.len() != scalar.len() {
             a.resize(scalar.len(), A::zero());
         }
+    }
+
+    fn matrix_to_euler(matrix: Matrix3<f32>) -> Vector3<f32> {
+        let sy = -matrix.z.x;
+
+        if sy.abs() > 1.0 - 1e-6 {
+            // Gimbal lock detected, handle the singularity
+            let x = 0.0;
+            let y = PI / 2.0 * sy.signum();
+            let z = y.atan2(-matrix.x.y);
+            Vector3::new(x, y, z)
+        } else {
+            let x = matrix.z.y.atan2(matrix.z.z);
+            let y = sy.asin();
+            let z = matrix.y.x.atan2(matrix.x.x);
+            Vector3::new(x, y, z)
+        }
+    }
+
+    fn decompose_matrix(matrix: Matrix4<f32>) -> (Vector3<f32>, Vector3<f32>, Vector3<f32>) {
+        let translation = matrix.w.truncate();
+
+        let scale_x = matrix.x.truncate().magnitude();
+        let scale_y = matrix.y.truncate().magnitude();
+        let scale_z = matrix.z.truncate().magnitude();
+        let scale = Vector3::new(scale_x, scale_y, scale_z);
+
+        let rotation_matrix = Matrix3::from_cols(
+            matrix.x.truncate(),
+            matrix.y.truncate(),
+            matrix.z.truncate(),
+        );
+
+        let rotation = Self::matrix_to_euler(rotation_matrix);
+
+        (translation, rotation, scale)
     }
 
     fn load_data(scene: &Scene, node: &Rc<Node>, node_obj: Rc<RefCell<GameObject>>) {
@@ -174,6 +211,22 @@ impl SceneLoader {
             )
             .collect();
 
-        node_obj.borrow_mut().drawable = Some(Object3D::new(vertices, None));
+        let mut node_obj = node_obj.borrow_mut();
+        node_obj.drawable = Some(Object3D::new(vertices, None));
+
+        // set transformations
+        let t = node.transformation;
+        let (position, rotation, scale) = Self::decompose_matrix(Matrix4::from([
+            [t.a1, t.b1, t.c1, t.d1],
+            [t.a2, t.b2, t.c2, t.d2],
+            [t.a3, t.b3, t.c3, t.d3],
+            [t.a4, t.b4, t.c4, t.d4],
+        ])); // convert row to column major (assimp to cgmath)
+
+        node_obj.transform.set_position(position);
+        node_obj.transform.set_rotation(rotation);
+        node_obj.transform.set_nonuniform_scale(scale);
+        // TODO: REMOVE
+        node_obj.add_component::<RotateComponent>();
     }
 }
