@@ -104,6 +104,10 @@ impl SceneLoader {
     }
 
     fn load_data(scene: &Scene, node: &Rc<Node>, node_obj: Rc<RefCell<GameObject>>) {
+        if node.meshes.is_empty() {
+            return;
+        }
+
         let mut positions: Vec<Vector3<f32>> = Vec::new();
         let mut tex_coords: Vec<Vector2<f32>> = Vec::new();
         let mut normals: Vec<Vector3<f32>> = Vec::new();
