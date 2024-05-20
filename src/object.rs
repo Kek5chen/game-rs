@@ -42,23 +42,12 @@ pub struct Object2D {
 }
 
 impl Drawable for Object2D {
-    fn setup(&mut self, device: &Device) {
-        let v_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("3D Object Vertex Buffer"),
-            contents: bytemuck::cast_slice(self.data.vertices.as_slice()),
-            usage: BufferUsages::VERTEX,
-        });
-        let i_buffer = self.data.indices.as_ref().map(|indices| {
-            device.create_buffer_init(&BufferInitDescriptor {
-                label: Some("3D Object Index Buffer"),
-                contents: bytemuck::cast_slice(indices.as_slice()),
-                usage: BufferUsages::INDEX,
-            })
-        });
-        self.runtime_data = Some(ObjectRuntimeData {
-            vertices_buf: v_buffer,
-            indices_buf: i_buffer,
-        });
+    fn setup(&mut self, device: &Device, model_bind_group_layout: &BindGroupLayout) {
+        todo!()
+    }
+
+    fn update(&mut self, parent: Rc<RefCell<GameObject>>, queue: &Queue) {
+        todo!()
     }
 
     fn draw<'a, 'b>(
@@ -69,16 +58,7 @@ impl Drawable for Object2D {
     ) where
         'a: 'b,
     {
-        let runtime_data = self
-            .runtime_data
-            .as_ref()
-            .expect("Runtime data should have been setup before calling draw on an object.");
-        rpass.set_vertex_buffer(0, runtime_data.vertices_buf.slice(..));
-        if let Some(indices) = runtime_data.indices_buf.as_ref() {
-            rpass.set_index_buffer(indices.slice(..), IndexFormat::Uint32);
-        } else {
-            rpass.draw(0..self.data.vertices.len() as u32, 0..1)
-        }
+        todo!()
     }
 }
 
