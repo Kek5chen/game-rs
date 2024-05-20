@@ -226,7 +226,5 @@ impl SceneLoader {
         node_obj.transform.set_position(position);
         node_obj.transform.set_rotation(rotation);
         node_obj.transform.set_nonuniform_scale(scale);
-        // TODO: REMOVE
-        node_obj.add_component::<RotateComponent>();
     }
 }
