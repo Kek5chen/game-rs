@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use cgmath::{Deg, Vector3};
+use rand::random;
 
 use crate::components::Component;
 use crate::object::GameObject;
@@ -18,7 +19,7 @@ impl Component for RotateComponent {
     {
         RotateComponent {
             rotate_speed: Deg(5.0),
-            iteration: 0,
+            iteration: random(), // TODO: is cool but might lead to odd behavior
         }
     }
 
