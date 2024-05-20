@@ -2,6 +2,8 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 use std::time::Instant;
 
+use log::info;
+
 use crate::components::CameraComp;
 use crate::object::GameObject;
 use crate::transform::Transform;
@@ -65,5 +67,17 @@ impl World {
         }
 
         self.last_frame_time = Instant::now();
+    }
+
+    pub fn print_objects(&self) {
+        info!("{} game objects in world.", self.objects.len());
+        Self::print_objects_rec(&self.children, 0)
+    }
+
+    pub fn print_objects_rec(children: &Vec<Rc<RefCell<GameObject>>>, i: i32) {
+        for child in children {
+            info!("{}- {}", "  ".repeat(i as usize), &child.borrow().name);
+            Self::print_objects_rec(&child.borrow().children, i + 1);
+        }
     }
 }
