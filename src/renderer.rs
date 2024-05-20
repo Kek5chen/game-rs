@@ -2,24 +2,15 @@ use std::cell::RefCell;
 use std::mem::size_of;
 use std::rc::Rc;
 
-use cgmath::Matrix4;
+use cgmath::{Matrix4, SquareMatrix};
 use log::{debug, error};
-use wgpu::{
-    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages,
-    Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction,
-    DepthBiasState, FragmentState, Id, include_wgsl, LoadOp, MultisampleState, Operations,
-    PipelineLayout, RenderPassColorAttachment, RenderPassDepthStencilAttachment,
-    RenderPassDescriptor, RenderPipeline, ShaderStages, StencilState, StoreOp, SurfaceError,
-    SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute,
-    VertexBufferLayout, VertexFormat, VertexStepMode,
-};
+use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Color, ColorTargetState, ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction, DepthBiasState, FragmentState, Id, include_wgsl, LoadOp, MultisampleState, Operations, PipelineLayout, RenderPass, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, RenderPipeline, ShaderStages, StencilState, StoreOp, SurfaceError, SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::window::Window;
 
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
-use crate::object::{ModelData, Vertex2D, Vertex3D};
+use crate::object::{GameObject, Vertex2D, Vertex3D};
 use crate::state::State;
 use crate::world::World;
 
@@ -383,12 +374,20 @@ impl Renderer {
         rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
 
         unsafe {
-            for object in &world.objects {
-                let object_ptr = object.as_ptr();
-                for drawable in &mut (*object_ptr).drawable {
-                    drawable.update(object.clone(), &self.state.queue);
-                    drawable.draw(&mut rpass, pipeline, &self.uniform_bind_group_layout);
-                }
+            self.traverse_and_render(&mut rpass, &pipeline, &world.children, Matrix4::identity());
+        }
+    }
+    
+    unsafe fn traverse_and_render(&self, rpass: &mut RenderPass, pipeline: &RenderPipeline, children: &Vec<Rc<RefCell<GameObject>>>, combined_matrix: Matrix4<f32>) {
+        for child in children {
+           let child_ptr = child.as_ptr();
+            if !(*child_ptr).children.is_empty() {
+                self.traverse_and_render(rpass, pipeline, &(*child_ptr).children, combined_matrix * (*child_ptr).transform.full_matrix());
+            }
+            let object_ptr = child.as_ptr();
+            for drawable in &mut (*object_ptr).drawable {
+                drawable.update(child.clone(), &self.state.queue, &combined_matrix);
+                drawable.draw(rpass, pipeline, &self.uniform_bind_group_layout);
             }
         }
     }

@@ -47,7 +47,12 @@ impl Drawable for Object2D {
         todo!()
     }
 
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>, queue: &Queue) {
+    fn update(
+        &mut self,
+        parent: Rc<RefCell<GameObject>>,
+        queue: &Queue,
+        outer_transform: &Matrix4<f32>,
+    ) {
         todo!()
     }
 
@@ -137,12 +142,19 @@ impl Drawable for Object3D {
         });
     }
 
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>, queue: &Queue) {
+    fn update(
+        &mut self,
+        parent: Rc<RefCell<GameObject>>,
+        queue: &Queue,
+        outer_transform: &Matrix4<f32>,
+    ) {
         let runtime_data = self
             .runtime_data
             .as_mut()
             .expect("Runtime data should have been setup before calling update on an object.");
-        runtime_data.model_data.update(parent.clone());
+        runtime_data
+            .model_data
+            .update(parent.clone(), outer_transform);
         queue.write_buffer(
             &runtime_data.model_data_buffer,
             0,
@@ -233,8 +245,8 @@ impl ModelData {
         }
     }
 
-    pub fn update(&mut self, object: Rc<RefCell<GameObject>>) {
-        self.model_mat = *object.borrow_mut().transform.full_matrix();
+    pub fn update(&mut self, object: Rc<RefCell<GameObject>>, outer_transform: &Matrix4<f32>) {
+        self.model_mat = outer_transform * object.borrow_mut().transform.full_matrix();
     }
 }
 
