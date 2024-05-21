@@ -94,68 +94,6 @@ impl State {
         depth_texture
     }
 
-    fn setup_pipeline(
-        device: &Device,
-        config: &SurfaceConfiguration,
-        shader: &ShaderModule,
-    ) -> (RenderPipeline, BindGroupLayout) {
-        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("Bind Group Layout"),
-            entries: &[BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::all(),
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-        });
-        let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-            label: Some("Pipeline Layout"),
-            bind_group_layouts: &[&bind_group_layout],
-            push_constant_ranges: &[],
-        });
-        let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&layout),
-            vertex: VertexState {
-                module: shader,
-                entry_point: "vs_main",
-                buffers: &[VertexBufferLayout {
-                    array_stride: (size_of_val(&TRIANGLE2D) / 3) as BufferAddress,
-                    attributes: &[VertexAttribute {
-                        format: VertexFormat::Float32x2,
-                        offset: 0,
-                        shader_location: 0,
-                    }],
-                    step_mode: VertexStepMode::Vertex,
-                }],
-            },
-            primitive: Default::default(),
-            depth_stencil: Some(DepthStencilState {
-                format: TextureFormat::Depth32Float,
-                depth_write_enabled: true,
-                depth_compare: CompareFunction::Less,
-                stencil: StencilState::default(),
-                bias: DepthBiasState::default(),
-            }),
-            multisample: Default::default(),
-            fragment: Some(FragmentState {
-                module: shader,
-                entry_point: "fs_main",
-                targets: &[Some(ColorTargetState {
-                    format: config.format,
-                    blend: None,
-                    write_mask: ColorWrites::ALL,
-                })],
-            }),
-            multiview: None,
-        });
-        (pipeline, bind_group_layout)
-    }
-
     fn load_shader(device: &Device) -> ShaderModule {
         let shader = device.create_shader_module(include_wgsl!("shaders/shader.wgsl"));
         info!("Loaded `shader.wgsl`..");

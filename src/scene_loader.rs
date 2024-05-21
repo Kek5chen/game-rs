@@ -9,7 +9,6 @@ use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
 use russimp::Vector3D;
 
-use crate::components::RotateComponent;
 use crate::drawable::{Object3D, Vertex3D};
 use crate::object::GameObject;
 use crate::world::World;
