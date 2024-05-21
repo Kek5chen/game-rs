@@ -1,4 +1,4 @@
-use crate::object::{SimpleVertex3D, Vertex2D, Vertex3D};
+use crate::drawable::{SimpleVertex3D, Vertex2D, Vertex3D};
 
 macro_rules! v2 {
     ($x:expr, $y:expr) => {

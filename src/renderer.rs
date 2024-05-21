@@ -10,7 +10,8 @@ use winit::window::Window;
 
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
-use crate::object::{GameObject, Vertex2D, Vertex3D};
+use crate::drawable::{Vertex2D, Vertex3D};
+use crate::object::GameObject;
 use crate::state::State;
 use crate::world::World;
 
