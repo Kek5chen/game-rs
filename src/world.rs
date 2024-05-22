@@ -3,24 +3,28 @@ use std::rc::{Rc, Weak};
 use std::time::Instant;
 
 use log::info;
+use wgpu::Device;
+use crate::asset_management::AssetManager;
 
 use crate::components::CameraComp;
 use crate::object::GameObject;
 use crate::transform::Transform;
 
-pub struct World {
+pub struct World<'a> {
     pub objects: Vec<Rc<RefCell<GameObject>>>,
     pub children: Vec<Rc<RefCell<GameObject>>>,
     pub active_camera: Option<Weak<RefCell<GameObject>>>,
+    pub assets: AssetManager<'a>,
     last_frame_time: Instant,
 }
 
-impl World {
-    pub fn new() -> World {
+impl<'a> World<'a> {
+    pub fn new(device: &'a Device) -> World {
         World {
             objects: vec![],
             children: vec![],
             active_camera: None,
+            assets: AssetManager::new(device),
             last_frame_time: Instant::now(),
         }
     }

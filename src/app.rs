@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use log::error;
+use wgpu::Device;
 use winit::dpi::{PhysicalSize, Size};
 use winit::error::EventLoopError;
 use winit::event::{Event, KeyEvent, WindowEvent};
@@ -7,18 +9,23 @@ use winit::event_loop::EventLoop;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
 
-use crate::renderer::Renderer;
+use crate::logichooks::LogicHooks;
+use crate::renderer::{Renderer, RuntimeRenderer};
 use crate::world::World;
 
-pub struct App {
+pub struct PrematureApp {
     window_builder: Option<WindowBuilder>,
-    renderer: Option<Renderer>,
+}
+
+pub struct App<'a> {
+    renderer: RuntimeRenderer,
+    world: World<'a>,
 }
 
 #[allow(unused)]
-impl Default for App {
-    fn default() -> Self {
-        App {
+impl Default for PrematureApp {
+    fn default() -> PrematureApp {
+        PrematureApp {
             window_builder: Some(
                 WindowBuilder::new()
                     .with_inner_size(Size::Physical(PhysicalSize {
@@ -27,26 +34,26 @@ impl Default for App {
                     }))
                     .with_title("Default Window"),
             ),
-            renderer: None,
         }
     }
 }
 
-impl App {
+impl<'a> App<'a> {
     #[allow(unused)]
-    pub fn new(title: &str, width: u32, height: u32) -> Self {
-        App {
+    pub fn create(title: &str, width: u32, height: u32) -> PrematureApp {
+        PrematureApp {
             window_builder: Some(
                 WindowBuilder::new()
                     .with_inner_size(Size::Physical(PhysicalSize { width, height }))
                     .with_resizable(false)
                     .with_title(title),
             ),
-            renderer: None,
         }
     }
+}
 
-    async fn init_state(&mut self) -> Result<EventLoop<()>, Box<dyn Error>> {
+impl PrematureApp {
+    async fn init_state(&mut self) -> Result<(EventLoop<()>, App), Box<dyn Error>> {
         let event_loop = match EventLoop::new() {
             Err(EventLoopError::NotSupported(_)) => {
                 return Err("No graphics backend found that could be used.".into())
@@ -60,19 +67,40 @@ impl App {
             .build(&event_loop)
             .unwrap();
 
-        self.renderer = Some(Renderer::new(window).await);
+        let renderer = Renderer::new(window).await;
 
-        Ok(event_loop)
+        // TODO: idk if this is safe. maybe?
+        let device: *const Device = &renderer.state.device;
+        let mut world = unsafe { World::new(&*device) };
+        let renderer = renderer.init(&mut world.assets);
+
+        let app = App { world, renderer };
+
+        Ok((event_loop, app))
     }
 
-    pub async fn run(mut self, world: &mut World) -> Result<(), Box<dyn Error>> {
-        let event_loop = self.init_state().await?;
+    pub async fn run(mut self, hooks: LogicHooks) -> Result<(), Box<dyn Error>> {
+        let (event_loop, mut app) = self.init_state().await?;
 
-        let renderer = self.renderer.as_mut().unwrap();
+        let renderer = &mut app.renderer;
+        let world = &mut app.world;
+
+        if let Some(init) = hooks.init {
+            if let Err(e) = init(world) {
+                error!("World init function hook returned: {e}");
+            }
+        }
 
         for obj in &mut world.objects {
             if let Some(ref mut drawable) = obj.borrow_mut().drawable {
-                drawable.setup(&renderer.state.device, &renderer.model_bind_group_layout)
+                drawable.setup(
+                    &renderer.state.device,
+                    &world
+                        .assets
+                        .materials
+                        .shaders
+                        .model_uniform_bind_group_layout,
+                )
             }
         }
 

@@ -1,9 +1,12 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use bytemuck::{Pod, Zeroable};
 
+use bytemuck::{Pod, Zeroable};
 use cgmath::{Matrix4, Vector2, Vector3};
-use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device, IndexFormat, Queue, RenderPass, RenderPipeline};
+use wgpu::{
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device, IndexFormat, Queue,
+    RenderPass,
+};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use crate::object::{GameObject, ModelData};
@@ -16,12 +19,8 @@ pub(crate) trait Drawable {
         queue: &Queue,
         outer_transform: &Matrix4<f32>,
     );
-    fn draw<'a, 'b>(
-        &'a self,
-        rpass: &mut RenderPass<'b>,
-        pipeline: &RenderPipeline,
-        bind_group: &BindGroupLayout,
-    ) where
+    fn draw<'a, 'b>(&'a self, rpass: &mut RenderPass<'b>)
+    where
         'a: 'b;
 }
 
@@ -67,12 +66,8 @@ impl Drawable for Object2D {
         todo!()
     }
 
-    fn draw<'a, 'b>(
-        &'a self,
-        rpass: &mut RenderPass<'b>,
-        pipeline: &RenderPipeline,
-        bind_group: &BindGroupLayout,
-    ) where
+    fn draw<'a, 'b>(&'a self, rpass: &mut RenderPass<'b>)
+    where
         'a: 'b,
     {
         todo!()
@@ -173,12 +168,8 @@ impl Drawable for Object3D {
         )
     }
 
-    fn draw<'a, 'b>(
-        &'a self,
-        rpass: &mut RenderPass<'b>,
-        pipeline: &RenderPipeline,
-        bind_group: &BindGroupLayout,
-    ) where
+    fn draw<'a, 'b>(&'a self, rpass: &mut RenderPass<'b>)
+    where
         'a: 'b,
     {
         let runtime_data = self
