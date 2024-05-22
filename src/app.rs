@@ -70,6 +70,7 @@ impl PrematureApp {
         let renderer = Renderer::new(window).await;
 
         // TODO: idk if this is safe. maybe?
+        //  edit: probably not :> but it works
         let device: *const Device = &renderer.state.device;
         let mut world = unsafe { World::new(&*device) };
         let renderer = renderer.init(&mut world.assets);
@@ -91,16 +92,19 @@ impl PrematureApp {
             }
         }
 
-        for obj in &mut world.objects {
-            if let Some(ref mut drawable) = obj.borrow_mut().drawable {
-                drawable.setup(
-                    &renderer.state.device,
-                    &world
-                        .assets
-                        .materials
-                        .shaders
-                        .model_uniform_bind_group_layout,
-                )
+        let world_ptr: *mut World = world;
+        unsafe {
+            for obj in &(*world_ptr).objects {
+                if let Some(ref mut drawable) = obj.borrow_mut().drawable {
+                    drawable.setup(
+                        &mut *world_ptr,
+                        &world
+                            .assets
+                            .materials
+                            .shaders
+                            .model_uniform_bind_group_layout,
+                    )
+                }
             }
         }
 

@@ -5,11 +5,10 @@ use env_logger::Env;
 use log::{error, LevelFilter};
 
 use crate::app::App;
+use crate::asset_management::mesh::Mesh;
 use crate::buffer::{CUBE, CUBE_INDICES};
-use crate::components::RotateComponent;
-use crate::drawable::Object3D;
 use crate::logichooks::LogicHooks;
-use crate::scene_loader::SceneLoader;
+use crate::mesh_renderer::MeshRenderer;
 use crate::world::World;
 
 mod app;
@@ -18,6 +17,7 @@ mod buffer;
 mod components;
 mod drawable;
 mod logichooks;
+mod mesh_renderer;
 mod object;
 mod renderer;
 mod scene_loader;
@@ -57,11 +57,15 @@ fn init(world: &mut World) -> Result<(), Box<dyn Error>> {
         .transform
         .set_position(Vector3::new(0.0, 1.0, 5.0));
 
-    let drawable = Object3D::new(CUBE.to_vec(), Some(CUBE_INDICES.to_vec()));
-    obj2.borrow_mut().set_drawable(Some(drawable));
+    let mesh = Mesh::new(CUBE.to_vec(), Some(CUBE_INDICES.to_vec()));
+    let mesh_id = world.assets.meshes.add_mesh(mesh);
+    obj2.borrow_mut()
+        .set_drawable(Some(MeshRenderer::new(mesh_id)));
     obj1.borrow_mut().add_child(obj2);
     world.add_child(obj1);
     world.add_child(camera);
+
+    world.print_objects();
 
     Ok(())
 }

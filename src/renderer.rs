@@ -21,7 +21,6 @@ use crate::asset_management::AssetManager;
 use crate::asset_management::shadermanager::{Shader, ShaderId};
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
-use crate::drawable::{Vertex2D, Vertex3D};
 use crate::object::GameObject;
 use crate::state::State;
 use crate::world::World;
@@ -33,12 +32,12 @@ pub struct RenderContext {
     pub encoder: CommandEncoder,
 }
 pub struct Renderer {
-    pub(crate) state: State,
+    pub(crate) state: Box<State>,
     window: Window,
 }
 
 pub struct RuntimeRenderer {
-    pub(crate) state: State,
+    pub(crate) state: Box<State>,
     window: Window,
     pipeline_2d_id: ShaderId,
     pipeline_3d_id: ShaderId,
@@ -72,7 +71,7 @@ impl Renderer {
     }
 
     pub(crate) async fn new(window: Window) -> Self {
-        let state = State::new(&window).await;
+        let state = Box::new(State::new(&window).await);
 
         Renderer { window, state }
     }
@@ -175,7 +174,8 @@ impl RuntimeRenderer {
             return;
         }
 
-        let camera_rc = world.active_camera.as_ref().unwrap().upgrade();
+        let world_ptr: *mut World = world;
+        let camera_rc = unsafe { (*world_ptr).active_camera.as_ref().unwrap().upgrade() };
         if camera_rc.is_none() {
             debug!("Couldn't take ownership of camera");
             return;
@@ -233,21 +233,30 @@ impl RuntimeRenderer {
         rpass.set_bind_group(0, &self.camera_uniform_bind_group, &[]);
 
         unsafe {
-            self.traverse_and_render(&mut rpass, &shader, &world.children, Matrix4::identity());
+            self.traverse_and_render(
+                &mut *world_ptr,
+                &mut rpass,
+                &shader,
+                &world.children,
+                Matrix4::identity(),
+            );
         }
     }
 
     unsafe fn traverse_and_render(
         &self,
+        world: &mut World,
         rpass: &mut RenderPass,
         shader: &Shader,
         children: &Vec<Rc<RefCell<GameObject>>>,
         combined_matrix: Matrix4<f32>,
     ) {
+        let world_ptr: *mut World = world;
         for child in children {
             let child_ptr = child.as_ptr();
             if !(*child_ptr).children.is_empty() {
                 self.traverse_and_render(
+                    &mut *world_ptr,
                     rpass,
                     shader,
                     &(*child_ptr).children,
@@ -256,8 +265,18 @@ impl RuntimeRenderer {
             }
             let object_ptr = child.as_ptr();
             for drawable in &mut (*object_ptr).drawable {
-                drawable.update(child.clone(), &self.state.queue, &combined_matrix);
-                drawable.draw(rpass);
+                {
+                    drawable.update(
+                        &mut *world_ptr,
+                        child.clone(),
+                        &self.state.queue,
+                        &combined_matrix,
+                    );
+                }
+                {
+                    let rpass_ptr: *mut RenderPass = rpass;
+                    drawable.draw(&*world_ptr, &mut *rpass_ptr);
+                }
             }
         }
     }

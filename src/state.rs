@@ -14,8 +14,6 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
-use crate::buffer::TRIANGLE2D;
-
 pub struct State {
     pub(crate) surface: Surface<'static>,
     pub(crate) device: Device,

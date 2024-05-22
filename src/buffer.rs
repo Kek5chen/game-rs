@@ -1,20 +1,4 @@
-use crate::drawable::{SimpleVertex3D, Vertex2D, Vertex3D};
-
-macro_rules! v2 {
-    ($x:expr, $y:expr) => {
-        Vertex2D {
-            position: cgmath::Vector2 { x: $x, y: $y },
-        }
-    };
-}
-
-#[allow(dead_code)]
-#[rustfmt::skip]
-pub const TRIANGLE2D: [Vertex2D; 3] = [
-    v2!(0.0, 1.0),
-    v2!(1.0, -1.0),
-    v2!(-1.0, -1.0)
-];
+use crate::asset_management::mesh::{SimpleVertex3D, Vertex3D};
 
 #[allow(dead_code)]
 #[rustfmt::skip]

@@ -14,7 +14,7 @@ use wgpu::{
     VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
 };
 
-use crate::drawable::Vertex3D;
+use crate::asset_management::mesh::Vertex3D;
 
 pub struct Shader {
     pub module: ShaderModule,

@@ -9,7 +9,8 @@ use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
 use russimp::Vector3D;
 
-use crate::drawable::{Object3D, Vertex3D};
+use crate::asset_management::mesh::{Mesh, Vertex3D};
+use crate::mesh_renderer::MeshRenderer;
 use crate::object::GameObject;
 use crate::world::World;
 
@@ -30,7 +31,7 @@ impl SceneLoader {
                 PostProcess::GenerateUVCoords,
                 PostProcess::GenerateNormals,
                 PostProcess::ForceGenerateNormals,
-                PostProcess::EmbedTextures
+                PostProcess::EmbedTextures,
             ],
         )?;
 
@@ -50,7 +51,7 @@ impl SceneLoader {
         node: &Rc<Node>,
         node_obj: Rc<RefCell<GameObject>>,
     ) {
-        Self::load_data(scene, node, node_obj.clone());
+        Self::load_data(world, scene, node, node_obj.clone());
         for child in node.children.borrow().iter() {
             let obj = world.new_object(&child.name);
             node_obj.borrow_mut().add_child(obj.clone());
@@ -142,7 +143,12 @@ impl SceneLoader {
         (translation, rotation, scale)
     }
 
-    fn load_data(scene: &Scene, node: &Rc<Node>, node_obj: Rc<RefCell<GameObject>>) {
+    fn load_data(
+        world: &mut World,
+        scene: &Scene,
+        node: &Rc<Node>,
+        node_obj: Rc<RefCell<GameObject>>,
+    ) {
         if node.meshes.is_empty() {
             return;
         }
@@ -213,8 +219,11 @@ impl SceneLoader {
             )
             .collect();
 
+        let mesh = Mesh::new(vertices, None);
+        let id = world.assets.meshes.add_mesh(mesh);
+
         let mut node_obj = node_obj.borrow_mut();
-        node_obj.drawable = Some(Object3D::new(vertices, None));
+        node_obj.drawable = Some(MeshRenderer::new(id));
 
         // set transformations
         let t = node.transformation;
