@@ -2,9 +2,10 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use cgmath::Matrix4;
-use wgpu::{BindGroupLayout, IndexFormat, Queue, RenderPass};
+use wgpu::{BindGroupLayout, Device, IndexFormat, Queue, RenderPass};
 
-use crate::asset_management::mesh::RuntimeMesh;
+use crate::asset_management::materialmanager::RuntimeMaterial;
+use crate::asset_management::mesh::{Mesh, RuntimeMesh};
 use crate::asset_management::meshmanager::MeshId;
 use crate::drawable::Drawable;
 use crate::object::GameObject;
@@ -21,11 +22,35 @@ impl MeshRenderer {
 }
 
 impl Drawable for MeshRenderer {
-    fn setup(&mut self, world: &mut World, bind_group_layout: &BindGroupLayout) {
-        world
-            .assets
-            .meshes
-            .init_runtime_mesh(self.mesh, bind_group_layout);
+    fn setup(
+        &mut self,
+        device: &Device,
+        queue: &Queue,
+        world: &mut World,
+        model_uniform_bind_group_layout: &BindGroupLayout,
+        material_uniform_bind_group_layout: &BindGroupLayout,
+    ) {
+        unsafe {
+            let world: *mut World = world;
+            (*world)
+                .assets
+                .meshes
+                .init_runtime_mesh(self.mesh, model_uniform_bind_group_layout);
+            let mesh: *const Box<Mesh> = (*world)
+                .assets
+                .meshes
+                .get_raw_mesh(self.mesh)
+                .expect("Normal mesh should be set");
+
+            for (mat_id, _) in &(*mesh).material_ranges {
+                (*world).assets.materials.init_runtime_material(
+                    &mut *world,
+                    queue,
+                    *mat_id,
+                    material_uniform_bind_group_layout,
+                );
+            }
+        }
     }
 
     fn update(
@@ -58,13 +83,28 @@ impl Drawable for MeshRenderer {
             .get_runtime_mesh(self.mesh)
             .expect("Runtime mesh should be initialized before calling draw.");
 
-        rpass.set_bind_group(1, &(*runtime_mesh).data.model_bind_group, &[]);
+        let mesh: *const Box<Mesh> = world
+            .assets
+            .meshes
+            .get_raw_mesh(self.mesh)
+            .expect("Normal mesh should be set");
+
         rpass.set_vertex_buffer(0, (*runtime_mesh).data.vertices_buf.slice(..));
+        rpass.set_bind_group(1, &(*runtime_mesh).data.model_bind_group, &[]);
         if let Some(i_buffer) = (*runtime_mesh).data.indices_buf.as_ref() {
             rpass.set_index_buffer(i_buffer.slice(..), IndexFormat::Uint32);
             rpass.draw_indexed(0..(*runtime_mesh).data.indices_num as u32, 0, 0..1);
         } else {
-            rpass.draw(0..(*runtime_mesh).data.vertices_num as u32, 0..1)
+            for (mat_id, range) in &(*mesh).material_ranges {
+                let material: *const RuntimeMaterial = world
+                    .assets
+                    .materials
+                    .get_runtime_material(*mat_id)
+                    .unwrap();
+
+                rpass.set_bind_group(2, &(*material).bind_group, &[]);
+                rpass.draw(range.clone(), 0..1);
+            }
         }
     }
 }

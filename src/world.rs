@@ -3,9 +3,9 @@ use std::rc::{Rc, Weak};
 use std::time::Instant;
 
 use log::info;
-use wgpu::Device;
-use crate::asset_management::AssetManager;
+use wgpu::{Device, Queue};
 
+use crate::asset_management::AssetManager;
 use crate::components::CameraComp;
 use crate::object::GameObject;
 use crate::transform::Transform;
@@ -19,12 +19,12 @@ pub struct World<'a> {
 }
 
 impl<'a> World<'a> {
-    pub fn new(device: &'a Device) -> World {
+    pub fn new(device: &'a Device, queue: &Queue) -> World<'a> {
         World {
             objects: vec![],
             children: vec![],
             active_camera: None,
-            assets: AssetManager::new(device),
+            assets: AssetManager::new(device, queue),
             last_frame_time: Instant::now(),
         }
     }

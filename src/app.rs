@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use log::error;
-use wgpu::Device;
+use wgpu::{Device, Queue};
 use winit::dpi::{PhysicalSize, Size};
 use winit::error::EventLoopError;
 use winit::event::{Event, KeyEvent, WindowEvent};
@@ -72,7 +72,8 @@ impl PrematureApp {
         // TODO: idk if this is safe. maybe?
         //  edit: probably not :> but it works
         let device: *const Device = &renderer.state.device;
-        let mut world = unsafe { World::new(&*device) };
+        let queue: *const Queue = &renderer.state.queue;
+        let mut world = unsafe { World::new(&*device, &*queue) };
         let renderer = renderer.init(&mut world.assets);
 
         let app = App { world, renderer };
@@ -97,12 +98,19 @@ impl PrematureApp {
             for obj in &(*world_ptr).objects {
                 if let Some(ref mut drawable) = obj.borrow_mut().drawable {
                     drawable.setup(
+                        &renderer.state.device,
+                        &renderer.state.queue,
                         &mut *world_ptr,
                         &world
                             .assets
                             .materials
                             .shaders
                             .model_uniform_bind_group_layout,
+                        &world
+                            .assets
+                            .materials
+                            .shaders
+                            .material_uniform_bind_group_layout,
                     )
                 }
             }

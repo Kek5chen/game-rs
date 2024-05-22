@@ -1,8 +1,11 @@
+use std::ops::Range;
+
 use bytemuck::{Pod, Zeroable};
 use cgmath::{Vector2, Vector3};
 use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
+use crate::asset_management::materialmanager::MaterialId;
 use crate::object::ModelData;
 
 #[derive(Copy, Clone)]
@@ -48,11 +51,13 @@ pub struct RuntimeMeshData {
 
 pub struct MeshVertexData<T> {
     vertices: Vec<T>,
-    indices: Option<Vec<u32>>,
-}
-
+    indices: Option<Vec<u32>>, // <--- put this
+} //         |
+  //         |
 pub struct Mesh {
+    //         here
     data: MeshVertexData<Vertex3D>,
+    pub material_ranges: Vec<(MaterialId, Range<u32>)>,
 }
 
 pub struct RuntimeMesh {
@@ -60,9 +65,14 @@ pub struct RuntimeMesh {
 }
 
 impl Mesh {
-    pub fn new(vertices: Vec<Vertex3D>, indices: Option<Vec<u32>>) -> Box<Mesh> {
+    pub fn new(
+        vertices: Vec<Vertex3D>,
+        indices: Option<Vec<u32>>,
+        material_ranges: Vec<(MaterialId, Range<u32>)>,
+    ) -> Box<Mesh> {
         Box::new(Mesh {
             data: MeshVertexData::<Vertex3D> { vertices, indices },
+            material_ranges,
         })
     }
 
@@ -91,7 +101,7 @@ impl Mesh {
         });
         let bind_group = device.create_bind_group(&BindGroupDescriptor {
             label: Some("Model Bind Group"),
-            layout: &model_bind_group_layout,
+            layout: model_bind_group_layout,
             entries: &[BindGroupEntry {
                 binding: 0,
                 resource: model_data_buffer.as_entire_binding(),

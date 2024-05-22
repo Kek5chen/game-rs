@@ -1,4 +1,5 @@
-use wgpu::Device;
+use wgpu::{Device, Queue};
+
 use crate::asset_management::{MaterialManager, TextureManager};
 use crate::asset_management::meshmanager::MeshManager;
 
@@ -9,9 +10,9 @@ pub struct AssetManager<'a> {
 }
 
 impl<'a> AssetManager<'a> {
-    pub fn new(device: &'a Device) -> AssetManager {
+    pub fn new(device: &'a Device, queue: &Queue) -> AssetManager<'a> {
         AssetManager {
-            textures: TextureManager::new(device),
+            textures: TextureManager::new(device, queue),
             materials: MaterialManager::new(device),
             meshes: MeshManager::new(device),
         }

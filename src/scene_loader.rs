@@ -1,15 +1,24 @@
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
+use std::collections::HashMap;
 use std::error::Error;
 use std::f32::consts::PI;
 use std::rc::Rc;
 
+use bytemuck::Contiguous;
 use cgmath::{InnerSpace, Matrix3, Matrix4, Vector2, Vector3, Zero};
+use cgmath::num_traits::ToPrimitive;
 use itertools::izip;
+use log::{debug, info, warn};
+use russimp::material::{DataContent, MaterialProperty, PropertyTypeInfo, Texture, TextureType};
 use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
 use russimp::Vector3D;
+use wgpu::TextureFormat;
 
+use crate::asset_management::materialmanager::{Material, MaterialId};
 use crate::asset_management::mesh::{Mesh, Vertex3D};
+use crate::asset_management::shadermanager::ShaderId;
+use crate::asset_management::texturemanager::TextureId;
 use crate::mesh_renderer::MeshRenderer;
 use crate::object::GameObject;
 use crate::world::World;
@@ -21,7 +30,7 @@ impl SceneLoader {
         world: &mut World,
         path: &str,
     ) -> Result<Rc<RefCell<GameObject>>, Box<dyn Error>> {
-        let scene = Scene::from_file(
+        let mut scene = Scene::from_file(
             path,
             vec![
                 PostProcess::CalculateTangentSpace,
@@ -40,6 +49,8 @@ impl SceneLoader {
             None => return Ok(world.new_object("EmptyLoadedObject")),
         };
 
+        let materials = Self::load_materials(&scene, world);
+        Self::update_material_indicies(&mut scene, materials);
         let root_object = world.new_object(&root.name);
         Self::load_rec(world, &scene, &root, root_object.clone());
         Ok(root_object)
@@ -164,10 +175,13 @@ impl SceneLoader {
         const VEC2_FROM_VEC3D: fn(&Vector3D) -> Vector2<f32> =
             |v: &Vector3D| Vector2::new(v.x, v.y);
 
+        let mut material_ranges = Vec::new();
+        let mut mesh_vertex_count_start = 0;
         for (_, mesh) in (0..)
             .zip(scene.meshes.iter())
             .filter(|(i, _)| node.meshes.contains(i))
         {
+            let mut mesh_vertex_count = mesh_vertex_count_start;
             for face in &mesh.faces {
                 if face.0.len() != 3 {
                     continue; // ignore line and point primitives
@@ -195,7 +209,13 @@ impl SceneLoader {
                     &mesh.bitangents,
                     VEC3_FROM_VEC3D,
                 );
+                mesh_vertex_count += 3;
             }
+            material_ranges.push((
+                mesh.material_index as usize,
+                mesh_vertex_count_start..mesh_vertex_count,
+            ));
+            mesh_vertex_count_start = mesh_vertex_count;
         }
 
         // it does work tho
@@ -219,7 +239,7 @@ impl SceneLoader {
             )
             .collect();
 
-        let mesh = Mesh::new(vertices, None);
+        let mesh = Mesh::new(vertices, None, material_ranges);
         let id = world.assets.meshes.add_mesh(mesh);
 
         let mut node_obj = node_obj.borrow_mut();
@@ -237,5 +257,151 @@ impl SceneLoader {
         node_obj.transform.set_position(position);
         node_obj.transform.set_rotation(rotation);
         node_obj.transform.set_nonuniform_scale(scale);
+    }
+
+    fn load_materials(scene: &Scene, world: &mut World) -> HashMap<u32, MaterialId> {
+        let shader3d = world
+            .assets
+            .materials
+            .shaders
+            .find_shader_by_name("3D")
+            .unwrap_or_default();
+
+        let mut mapping = HashMap::new();
+        for (i, material) in scene.materials.iter().enumerate() {
+            let mat_id = Self::load_material(world, material, shader3d);
+            mapping.insert(i as u32, mat_id);
+        }
+        mapping
+    }
+    fn update_material_indicies(scene: &mut Scene, mat_map: HashMap<u32, MaterialId>) {
+        for mesh in &mut scene.meshes {
+            let new_idx = mat_map.get(&mesh.material_index).cloned();
+            let intermediate_idx = new_idx.unwrap_or_default();
+            mesh.material_index = intermediate_idx.to_u32().unwrap_or_default();
+
+            if intermediate_idx != mesh.material_index as usize {
+                warn!("Scene tried to use more than {} materials. That's crazy and I thought you wanted to know that.", u32::MAX_VALUE);
+            }
+        }
+    }
+
+    fn load_texture(
+        world: &mut World,
+        texture: Rc<RefCell<russimp::material::Texture>>,
+    ) -> TextureId {
+        let texture = texture.borrow();
+        match &texture.data {
+            DataContent::Texel(_) => panic!("I CAN'T ADD TEXLESLSSE YET PLS HELP"),
+            DataContent::Bytes(data) => {
+                let decoded = image::load_from_memory(data).expect("Couldn't decode image");
+                let rgb8 = decoded
+                    .as_rgb8()
+                    .expect("Should've converted between formats");
+                let mut data = Vec::with_capacity((rgb8.width() * rgb8.height() * 3) as usize);
+                for pixel in rgb8.pixels() {
+                    data.push(pixel[2]); // B
+                    data.push(pixel[1]); // G
+                    data.push(pixel[0]); // R
+                    data.push(255); // A
+                }
+                world.assets.textures.add_texture(
+                    rgb8.width(),
+                    rgb8.height(),
+                    TextureFormat::Bgra8UnormSrgb,
+                    data,
+                )
+            }
+        }
+    }
+
+    fn extract_vec3_property<F>(
+        properties: &Vec<MaterialProperty>,
+        key: &str,
+        default: F,
+    ) -> Vector3<f32>
+    where
+        F: Fn() -> Vector3<f32>,
+    {
+        let prop = properties.iter().find(|prop| prop.key.contains(key));
+        match prop {
+            None => default(),
+            Some(prop) => match &prop.data {
+                PropertyTypeInfo::FloatArray(arr) => {
+                    if arr.len() == 3 {
+                        Vector3::new(arr[0], arr[1], arr[2])
+                    } else {
+                        warn!(
+                            "Property {} was expected to have 3 values but only had {}",
+                            key,
+                            arr.len()
+                        );
+                        default()
+                    }
+                }
+                _ => default(),
+            },
+        }
+    }
+
+    fn extract_string_property<F>(
+        properties: &Vec<MaterialProperty>,
+        key: &str,
+        default: F,
+    ) -> String
+    where
+        F: Fn() -> String,
+    {
+        let prop = properties.iter().find(|prop| prop.key.contains(key));
+        match prop {
+            None => default(),
+            Some(prop) => match &prop.data {
+                PropertyTypeInfo::String(str) => str.clone(),
+                _ => default(),
+            },
+        }
+    }
+
+    fn extract_float_property(properties: &Vec<MaterialProperty>, key: &str, default: f32) -> f32 {
+        let prop = properties.iter().find(|prop| prop.key.contains(key));
+        match prop {
+            None => default,
+            Some(prop) => match &prop.data {
+                PropertyTypeInfo::FloatArray(f) => f.get(0).cloned().unwrap_or(default),
+                _ => default,
+            },
+        }
+    }
+
+    fn load_material(
+        world: &mut World,
+        material: &russimp::material::Material,
+        shader: ShaderId,
+    ) -> MaterialId {
+        let name =
+            Self::extract_string_property(&material.properties, "name", || "Material".to_string());
+
+        let diffuse = Self::extract_vec3_property(&material.properties, "diffuse", || {
+            Vector3::new(0.788, 0.788, 0.788)
+        });
+        let diffuse_tex = material.textures.get(&TextureType::Diffuse);
+        let diffuse_tex_id = diffuse_tex.map(|tex| Self::load_texture(world, tex.clone()));
+
+        let normals = material
+            .textures
+            .get(&TextureType::Normals)
+            .map(|tex| Self::load_texture(world, tex.clone()));
+        let shininess = Self::extract_float_property(&material.properties, "shininess", 0.0);
+        let new_material = Material {
+            name,
+            diffuse,
+            shininess,
+            shininess_texture: None,
+            opacity: 1.0,
+            shader,
+            normal_texture: normals,
+            diffuse_texture: diffuse_tex_id,
+        };
+        world.assets.materials.add_material(new_material)
     }
 }

@@ -1,14 +1,11 @@
-use std::mem::size_of_val;
-
-use log::info;
 use wgpu::{
-    Adapter, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType,
-    BufferAddress, BufferBindingType, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState,
-    DepthStencilState, Device, DeviceDescriptor, Extent3d, FragmentState, include_wgsl, Instance,
-    PipelineLayoutDescriptor, PowerPreference, Queue, RenderPipeline, RenderPipelineDescriptor,
-    RequestAdapterOptions, ShaderModule, ShaderStages, StencilState, Surface, SurfaceConfiguration,
-    Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, VertexAttribute,
-    VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+    Adapter
+
+    , Device, DeviceDescriptor, Extent3d, Instance
+    , PowerPreference, Queue,
+    RequestAdapterOptions, Surface, SurfaceConfiguration,
+    Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages
+    ,
 };
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -90,12 +87,6 @@ impl State {
             view_formats: &[TextureFormat::Depth32Float],
         });
         depth_texture
-    }
-
-    fn load_shader(device: &Device) -> ShaderModule {
-        let shader = device.create_shader_module(include_wgsl!("shaders/shader.wgsl"));
-        info!("Loaded `shader.wgsl`..");
-        shader
     }
 
     pub async fn new(window: &Window) -> Self {

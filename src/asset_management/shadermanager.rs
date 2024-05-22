@@ -10,13 +10,15 @@ use wgpu::{
     BufferBindingType, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState,
     DepthStencilState, Device, FragmentState, MultisampleState, PipelineLayout,
     PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor,
-    ShaderModule, ShaderModuleDescriptor, ShaderSource, ShaderStages, StencilState, TextureFormat,
-    VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+    SamplerBindingType, ShaderModule, ShaderModuleDescriptor, ShaderSource, ShaderStages,
+    StencilState, TextureFormat, TextureSampleType, TextureViewDimension, VertexAttribute,
+    VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
 };
 
 use crate::asset_management::mesh::Vertex3D;
 
 pub struct Shader {
+    pub name: String,
     pub module: ShaderModule,
     pub pipeline_layout: PipelineLayout,
     pub pipeline: RenderPipeline,
@@ -28,6 +30,7 @@ pub const FALLBACK_SHADER_ID: ShaderId = 0;
 pub struct ShaderManager<'a> {
     pub camera_uniform_bind_group_layout: BindGroupLayout,
     pub model_uniform_bind_group_layout: BindGroupLayout,
+    pub material_uniform_bind_group_layout: BindGroupLayout,
     next_id: ShaderId,
     shaders: HashMap<ShaderId, Shader>,
     device: &'a Device,
@@ -63,9 +66,42 @@ impl<'a> ShaderManager<'a> {
                     count: None,
                 }],
             });
+        let material_uniform_bind_group_layout =
+            device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("Material Uniform Bind Group Layout"),
+                entries: &[
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Sampler(SamplerBindingType::NonFiltering),
+                        count: None,
+                    },
+                ],
+            });
         let mut shader_manager = ShaderManager {
             camera_uniform_bind_group_layout,
             model_uniform_bind_group_layout,
+            material_uniform_bind_group_layout,
             next_id: 0,
             shaders: HashMap::new(),
             device,
@@ -101,6 +137,7 @@ impl<'a> ShaderManager<'a> {
                 bind_group_layouts: &[
                     &self.camera_uniform_bind_group_layout,
                     &self.model_uniform_bind_group_layout,
+                    &self.material_uniform_bind_group_layout,
                 ],
                 push_constant_ranges: &[],
             });
@@ -166,6 +203,7 @@ impl<'a> ShaderManager<'a> {
             });
 
         let shader_id = self.add_shader(Shader {
+            name: name.to_string(),
             module: shader,
             pipeline_layout,
             pipeline,
@@ -184,5 +222,13 @@ impl<'a> ShaderManager<'a> {
 
     pub(crate) fn get_shader(&self, id: ShaderId) -> Option<&Shader> {
         self.shaders.get(&id)
+    }
+
+    pub(crate) fn find_shader_by_name(&self, name: &str) -> Option<ShaderId> {
+        self.shaders
+            .iter()
+            .find(|(_, v)| v.name == name)
+            .map(|(k, _)| k)
+            .cloned()
     }
 }

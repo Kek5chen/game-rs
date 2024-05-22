@@ -76,7 +76,7 @@ impl Renderer {
         Renderer { window, state }
     }
 
-    pub(crate) fn init<'a>(mut self, asset_manager: &mut AssetManager<'a>) -> RuntimeRenderer {
+    pub(crate) fn init(mut self, asset_manager: &mut AssetManager) -> RuntimeRenderer {
         let camera_data = Box::new(CameraData::empty());
         let (camera_uniform_buffer, camera_uniform_bind_group) = Self::create_uniform_buffer(
             &asset_manager
@@ -89,7 +89,7 @@ impl Renderer {
         let pipeline2d = asset_manager
             .materials
             .shaders
-            .load_combined_shader("3D", include_str!("shaders/shader2d.wgsl"));
+            .load_combined_shader("2D", include_str!("shaders/shader2d.wgsl"));
         let pipeline3d = asset_manager
             .materials
             .shaders
@@ -236,7 +236,6 @@ impl RuntimeRenderer {
             self.traverse_and_render(
                 &mut *world_ptr,
                 &mut rpass,
-                &shader,
                 &world.children,
                 Matrix4::identity(),
             );
@@ -247,7 +246,6 @@ impl RuntimeRenderer {
         &self,
         world: &mut World,
         rpass: &mut RenderPass,
-        shader: &Shader,
         children: &Vec<Rc<RefCell<GameObject>>>,
         combined_matrix: Matrix4<f32>,
     ) {
@@ -258,7 +256,6 @@ impl RuntimeRenderer {
                 self.traverse_and_render(
                     &mut *world_ptr,
                     rpass,
-                    shader,
                     &(*child_ptr).children,
                     combined_matrix * (*child_ptr).transform.full_matrix(),
                 );
