@@ -88,7 +88,7 @@ impl PrematureApp {
         let world = &mut app.world;
 
         if let Some(init) = hooks.init {
-            if let Err(e) = init(world) {
+            if let Err(e) = init(world, renderer.window()) {
                 error!("World init function hook returned: {e}");
             }
         }
@@ -124,6 +124,12 @@ impl PrematureApp {
                 if !renderer.state.input(event) {
                     match event {
                         WindowEvent::RedrawRequested => {
+                            if let Some(update_func) = hooks.update {
+                                if let Err(e) = update_func(world, renderer.window()) {
+                                    error!("Error happened when calling update function hook: {e}");
+                                }
+                            }
+                            
                             world.update();
                             renderer.state.update();
                             if !renderer.render_world(world) {

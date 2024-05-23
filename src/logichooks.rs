@@ -1,8 +1,9 @@
 use std::error::Error;
+use winit::window::Window;
 
 use crate::world::World;
 
-type HookFunc = fn(world: &mut World) -> Result<(), Box<dyn Error>>;
+type HookFunc = fn(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>>;
 
 pub struct LogicHooks {
     pub init: Option<HookFunc>,
