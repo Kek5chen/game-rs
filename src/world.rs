@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use log::info;
 use wgpu::{Device, Queue};
@@ -64,13 +64,13 @@ impl<'a> World<'a> {
                 let object_ptr = object.as_ptr();
                 for comp in &(*object_ptr).components {
                     let comp_ptr = comp.as_ptr();
-                    let delta_time = self.last_frame_time.elapsed().as_secs_f32();
+                    let delta_time = self.get_delta_time().as_secs_f32();
                     (*comp_ptr).update(object.clone(), delta_time)
                 }
             }
         }
 
-        self.last_frame_time = Instant::now();
+        self.tick_delta_time();
     }
 
     pub fn print_objects(&self) {
@@ -83,5 +83,13 @@ impl<'a> World<'a> {
             info!("{}- {}", "  ".repeat(i as usize), &child.borrow().name);
             Self::print_objects_rec(&child.borrow().children, i + 1);
         }
+    }
+    
+    fn tick_delta_time(&mut self) {
+        self.last_frame_time = Instant::now();
+    }
+    
+    pub fn get_delta_time(&self) -> Duration {
+        self.last_frame_time.elapsed()
     }
 }
