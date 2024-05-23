@@ -41,8 +41,8 @@ impl Material {
         let data = RuntimeMaterialData {
             diffuse: self.diffuse,
             _padding1: 0,
-            use_diffuse_texture: self.diffuse_texture.is_some(),
-            use_normal_texture: self.normal_texture.is_some(),
+            use_diffuse_texture: self.diffuse_texture.is_some() as u32,
+            use_normal_texture: self.normal_texture.is_some() as u32,
             shininess: self.shininess,
             opacity: self.opacity,
         };
@@ -106,8 +106,8 @@ impl Material {
 pub struct RuntimeMaterialData {
     diffuse: Vector3<f32>,
     _padding1: u32,
-    use_diffuse_texture: bool,
-    use_normal_texture: bool,
+    use_diffuse_texture: u32,
+    use_normal_texture: u32,
     shininess: f32,
     opacity: f32,
 }
