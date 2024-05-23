@@ -9,6 +9,7 @@ struct VInput {
 struct VOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
+    @location(1) vnorm: vec3<f32>,
 }
 
 struct CameraData {
@@ -56,11 +57,24 @@ fn vs_main(in: VInput) -> VOutput {
 
     out.position = mvp_matrix * vec4<f32>(in.vpos, 1.0);
     out.tex_coords = in.vtex;
+    out.vnorm = in.vnorm;
 
     return out;
 }
 
 @fragment
 fn fs_main(in: VOutput) -> @location(0) vec4<f32> {
-    return textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    var diffuse: vec4<f32>;
+
+    if material.use_diffuse_texture != 0 {
+        diffuse = textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    } else {
+        diffuse = vec4<f32>(material.diffuse, 1.0);
+    }
+
+    if diffuse.w < 0.8 {
+        discard;
+    }
+
+    return diffuse;
 }
