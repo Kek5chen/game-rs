@@ -314,7 +314,7 @@ impl SceneLoader {
     }
 
     fn extract_vec3_property<F>(
-        properties: &Vec<MaterialProperty>,
+        properties: &[MaterialProperty],
         key: &str,
         default: F,
     ) -> Vector3<f32>
@@ -342,11 +342,7 @@ impl SceneLoader {
         }
     }
 
-    fn extract_string_property<F>(
-        properties: &Vec<MaterialProperty>,
-        key: &str,
-        default: F,
-    ) -> String
+    fn extract_string_property<F>(properties: &[MaterialProperty], key: &str, default: F) -> String
     where
         F: Fn() -> String,
     {
@@ -360,7 +356,7 @@ impl SceneLoader {
         }
     }
 
-    fn extract_float_property(properties: &Vec<MaterialProperty>, key: &str, default: f32) -> f32 {
+    fn extract_float_property(properties: &[MaterialProperty], key: &str, default: f32) -> f32 {
         let prop = properties.iter().find(|prop| prop.key.contains(key));
         match prop {
             None => default,
