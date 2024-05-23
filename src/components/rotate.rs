@@ -9,7 +9,7 @@ use crate::object::GameObject;
 
 pub struct RotateComponent {
     rotate_speed: Deg<f32>,
-    iteration: u64,
+    iteration: f64,
 }
 
 impl Component for RotateComponent {
@@ -18,7 +18,7 @@ impl Component for RotateComponent {
         Self: Sized,
     {
         RotateComponent {
-            rotate_speed: Deg(5.0),
+            rotate_speed: Deg(50.0),
             iteration: random(), // TODO: is cool but might lead to odd behavior
         }
     }
@@ -29,10 +29,10 @@ impl Component for RotateComponent {
         let transform = &mut parent.borrow_mut().transform;
         let y_rot = transform.rotation().y + self.rotate_speed.0 * delta_time;
         transform.set_rotation(Vector3::new(
-            (self.iteration as f32 / 500.0).sin() * 100.0,
+            (self.iteration as f32 / 100.0).sin() * 45.0,
             y_rot,
             0.0,
         ));
-        self.iteration += 1;
+        self.iteration += 1.01;
     }
 }
