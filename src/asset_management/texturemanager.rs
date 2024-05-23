@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
 use wgpu::{
-    Device, Extent3d, Queue, SamplerDescriptor, TextureAspect,
-    TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
-    TextureViewDimension,
+    Device, Extent3d, Queue, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension,
+    TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension,
 };
 use wgpu::util::{DeviceExt, TextureDataOrder};
 
@@ -38,6 +37,23 @@ pub struct TextureManager<'a> {
 }
 
 impl<'a> TextureManager<'a> {
+    pub fn generate_new_fallback_diffuse_texture(
+        width: u32,
+        height: u32,
+    ) -> Vec<u8> {
+        let mut diffuse = vec![];
+        for x in 0..width as i32 {
+            for y in 0..height as i32 {
+                if x % 2 == y % 2 {
+                    diffuse.extend_from_slice(&[0, 0, 0, 255]);
+                } else {
+                    diffuse.extend_from_slice(&[255, 0, 255, 255]);
+                }
+            }
+        }
+        diffuse
+    }
+
     pub fn new(device: &'a Device, queue: &Queue) -> TextureManager<'a> {
         let mut manager = TextureManager {
             textures: HashMap::new(),
@@ -45,7 +61,14 @@ impl<'a> TextureManager<'a> {
             device,
         };
 
-        manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, vec![255, 0, 255, 255]);
+        const WIDTH: u32 = 35;
+        const HEIGHT: u32 = 35;
+        manager.add_texture(
+            WIDTH,
+            HEIGHT,
+            TextureFormat::Bgra8UnormSrgb,
+            Self::generate_new_fallback_diffuse_texture(WIDTH, HEIGHT),
+        );
         manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, vec![0, 0, 0, 0]);
         manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, vec![0, 0, 0, 0]);
 
