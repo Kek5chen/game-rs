@@ -56,7 +56,7 @@ fn vs_main(in: VInput) -> VOutput {
     let mvp_matrix = camera.view_proj_mat * model.model_mat;
 
     out.position = mvp_matrix * vec4<f32>(in.vpos, 1.0);
-    out.tex_coords = in.vtex;
+    out.tex_coords = vec2<f32>(in.vtex.x, 1 - in.vtex.y);
     out.vnorm = in.vnorm;
 
     return out;
