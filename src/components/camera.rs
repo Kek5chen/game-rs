@@ -10,6 +10,12 @@ pub struct CameraComp {
     pub projection: Matrix4<f32>,
 }
 
+impl CameraComp {
+    pub fn resize(&mut self, width: f32, height: f32) {
+        self.projection = cgmath::perspective(Deg(60.0), width / height, 0.01, 1000.0);
+    }
+}
+
 impl Component for CameraComp {
     fn new() -> Self {
         CameraComp {

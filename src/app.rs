@@ -8,6 +8,7 @@ use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
+use crate::components::CameraComp;
 
 use crate::logichooks::LogicHooks;
 use crate::renderer::{Renderer, RuntimeRenderer};
@@ -45,7 +46,7 @@ impl<'a> App<'a> {
             window_builder: Some(
                 WindowBuilder::new()
                     .with_inner_size(Size::Physical(PhysicalSize { width, height }))
-                    .with_resizable(false)
+                    //.with_resizable(false)
                     .with_title(title),
             ),
         }
@@ -145,7 +146,23 @@ impl PrematureApp {
                                 },
                             ..
                         } => window_target.exit(),
-                        WindowEvent::Resized(size) => renderer.state.resize(*size),
+                        WindowEvent::Resized(size) => {
+                            renderer.state.resize(*size);
+                            
+                            // TODO: I am sorry for what is about to come
+                            if let Some(cam_opt) = &world.active_camera {
+                                if let Some(cam_opt) = cam_opt.upgrade() {
+                                    if let Ok(mut cam) = cam_opt.try_borrow_mut() {
+                                        if let Some(cam_comp) = cam.get_component::<CameraComp>() {
+                                            if let Ok(mut comp) = cam_comp.try_borrow_mut() {
+                                                comp.resize(size.width as f32, size.height as f32);
+                                            }
+                                        } 
+                                    }
+                                }
+                            }
+                            // TODO: Forgive me. I apologize for the horror i've set upon this world.
+                        },
                         _ => {}
                     }
                 }
