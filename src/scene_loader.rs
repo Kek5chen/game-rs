@@ -295,19 +295,17 @@ impl SceneLoader {
             DataContent::Texel(_) => panic!("I CAN'T ADD TEXLESLSSE YET PLS HELP"),
             DataContent::Bytes(data) => {
                 let decoded = image::load_from_memory(data).expect("Couldn't decode image");
-                let rgb8 = decoded
-                    .as_rgb8()
-                    .expect("Should've converted between formats");
-                let mut data = Vec::with_capacity((rgb8.width() * rgb8.height() * 3) as usize);
-                for pixel in rgb8.pixels() {
+                let rgba = decoded.into_rgba8();
+                let mut data = Vec::with_capacity((rgba.width() * rgba.height() * 4) as usize);
+                for pixel in rgba.pixels() {
                     data.push(pixel[2]); // B
                     data.push(pixel[1]); // G
                     data.push(pixel[0]); // R
-                    data.push(255); // A
+                    data.push(pixel[3]); // A
                 }
                 world.assets.textures.add_texture(
-                    rgb8.width(),
-                    rgb8.height(),
+                    rgba.width(),
+                    rgba.height(),
                     TextureFormat::Bgra8UnormSrgb,
                     data,
                 )
