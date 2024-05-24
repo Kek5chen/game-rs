@@ -8,6 +8,7 @@ use winit::window::Window;
 use crate::app::App;
 use crate::asset_management::mesh::Mesh;
 use crate::buffer::{CUBE, CUBE_INDICES};
+use crate::components::RotateComponent;
 use crate::logichooks::LogicHooks;
 use crate::mesh_renderer::MeshRenderer;
 use crate::world::World;
@@ -62,6 +63,7 @@ fn init(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>> {
     let mesh_id = world.assets.meshes.add_mesh(mesh);
     obj2.borrow_mut()
         .set_drawable(Some(MeshRenderer::new(mesh_id)));
+    obj2.borrow_mut().add_component::<RotateComponent>();
     obj1.borrow_mut().add_child(obj2);
     world.add_child(obj1);
     world.add_child(camera);
