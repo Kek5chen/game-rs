@@ -1,4 +1,4 @@
-use std::cell::{RefCell, RefMut};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
 use std::f32::consts::PI;
@@ -8,8 +8,8 @@ use bytemuck::Contiguous;
 use cgmath::{InnerSpace, Matrix3, Matrix4, Vector2, Vector3, Zero};
 use cgmath::num_traits::ToPrimitive;
 use itertools::izip;
-use log::{debug, info, warn};
-use russimp::material::{DataContent, MaterialProperty, PropertyTypeInfo, Texture, TextureType};
+use log::{warn};
+use russimp::material::{DataContent, MaterialProperty, PropertyTypeInfo, TextureType};
 use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
 use russimp::Vector3D;
@@ -23,8 +23,10 @@ use crate::mesh_renderer::MeshRenderer;
 use crate::object::GameObject;
 use crate::world::World;
 
-pub struct SceneLoader {}
+#[allow(dead_code)]
+pub struct SceneLoader;
 
+#[allow(dead_code)]
 impl SceneLoader {
     pub(crate) fn load(
         world: &mut World,

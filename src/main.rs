@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn init(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>> {
+fn init(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> {
     let obj1 = world.new_object("Mow");
     let obj2 = world.new_object("Meoow");
     let camera = world.new_camera();

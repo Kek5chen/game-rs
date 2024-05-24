@@ -62,13 +62,15 @@ impl Material {
                 .get_runtime_texture_ensure_init(diffuse_texture_id, device, queue)
                 .unwrap();
             let normal_texture_id = self.diffuse_texture.unwrap_or(FALLBACK_NORMAL_TEXTURE);
-            let normal_texture = (*world)
+            // TODO: Implement normal texture into bind group
+            let _normal_texture = (*world)
                 .assets
                 .textures
                 .get_runtime_texture_ensure_init(normal_texture_id, device, queue)
                 .unwrap();
             let shininess_texture_id = self.diffuse_texture.unwrap_or(FALLBACK_SHININESS_TEXTURE);
-            let shininess_texture = (*world)
+            // TODO: Implement shininess texture into bind group
+            let _shininess_texture = (*world)
                 .assets
                 .textures
                 .get_runtime_texture_ensure_init(shininess_texture_id, device, queue)
@@ -115,6 +117,7 @@ pub struct RuntimeMaterialData {
 unsafe impl Zeroable for RuntimeMaterialData {}
 unsafe impl Pod for RuntimeMaterialData {}
 
+#[allow(dead_code)]
 pub struct RuntimeMaterial {
     pub(crate) data: RuntimeMaterialData,
     pub(crate) buffer: Buffer,
@@ -128,6 +131,7 @@ pub struct MaterialManager<'a> {
     device: &'a Device,
 }
 
+#[allow(dead_code)]
 impl<'a> MaterialManager<'a> {
     pub fn new(device: &'a Device) -> MaterialManager<'a> {
         let shader_manager = ShaderManager::new(device);

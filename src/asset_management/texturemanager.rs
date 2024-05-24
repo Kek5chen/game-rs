@@ -10,6 +10,7 @@ pub const FALLBACK_DIFFUSE_TEXTURE: TextureId = 0;
 pub const FALLBACK_NORMAL_TEXTURE: TextureId = 1;
 pub const FALLBACK_SHININESS_TEXTURE: TextureId = 2;
 
+#[allow(dead_code)]
 pub struct RuntimeTexture {
     texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,
@@ -30,12 +31,14 @@ enum Texture {
 
 pub type TextureId = usize;
 
+#[allow(dead_code)]
 pub struct TextureManager<'a> {
     textures: HashMap<TextureId, Texture>,
     next_id: TextureId,
     device: &'a Device,
 }
 
+#[allow(dead_code)]
 impl<'a> TextureManager<'a> {
     pub fn generate_new_fallback_diffuse_texture(
         width: u32,
@@ -139,7 +142,7 @@ impl<'a> TextureManager<'a> {
         }
     }
 
-    pub fn initialize_texture<'t>(
+    fn initialize_texture<'t>(
         texture: &'t mut Texture,
         device: &Device,
         queue: &Queue,

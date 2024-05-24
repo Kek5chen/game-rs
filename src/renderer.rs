@@ -1,24 +1,19 @@
 use std::cell::RefCell;
-use std::mem::size_of;
 use std::rc::Rc;
 
 use cgmath::{Matrix4, SquareMatrix};
 use log::{debug, error};
 use wgpu::{
-    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry,
-    BindingType, Buffer, BufferBindingType, BufferUsages, Color, ColorTargetState,
-    ColorWrites, CommandEncoder, CommandEncoderDescriptor, CompareFunction, DepthBiasState,
-    FragmentState, Id, include_wgsl, LoadOp, MultisampleState, Operations, PipelineLayout,
-    RenderPass, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor,
-    RenderPipeline, ShaderStages, StencilState, StoreOp, SurfaceError, SurfaceTexture,
-    TextureFormat, TextureView, TextureViewDescriptor, VertexAttribute, VertexBufferLayout,
-    VertexFormat, VertexStepMode,
+    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, Buffer, BufferUsages, Color,
+    CommandEncoder, CommandEncoderDescriptor, LoadOp, Operations, RenderPass,
+    RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp,
+    SurfaceError, SurfaceTexture, TextureView, TextureViewDescriptor,
 };
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::window::Window;
 
 use crate::asset_management::AssetManager;
-use crate::asset_management::shadermanager::{Shader, ShaderId};
+use crate::asset_management::shadermanager::ShaderId;
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
 use crate::object::GameObject;
@@ -36,6 +31,7 @@ pub struct Renderer {
     window: Window,
 }
 
+#[allow(dead_code)]
 pub struct RuntimeRenderer {
     pub(crate) state: Box<State>,
     window: Window,
@@ -76,7 +72,7 @@ impl Renderer {
         Renderer { window, state }
     }
 
-    pub(crate) fn init(mut self, asset_manager: &mut AssetManager) -> RuntimeRenderer {
+    pub(crate) fn init(self, asset_manager: &mut AssetManager) -> RuntimeRenderer {
         let camera_data = Box::new(CameraData::empty());
         let (camera_uniform_buffer, camera_uniform_bind_group) = Self::create_uniform_buffer(
             &asset_manager

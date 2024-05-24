@@ -36,6 +36,7 @@ pub struct ShaderManager<'a> {
     device: &'a Device,
 }
 
+#[allow(dead_code)]
 impl<'a> ShaderManager<'a> {
     pub fn new(device: &'a Device) -> ShaderManager {
         let camera_uniform_bind_group_layout =

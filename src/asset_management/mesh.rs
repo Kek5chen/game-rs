@@ -39,6 +39,7 @@ pub struct Vertex3D {
 unsafe impl Zeroable for Vertex3D {}
 unsafe impl Pod for Vertex3D {}
 
+#[allow(dead_code)]
 pub struct RuntimeMeshData {
     pub(crate) vertices_buf: wgpu::Buffer,
     pub(crate) vertices_num: usize,

@@ -23,7 +23,7 @@ impl Component for RotateComponent {
         }
     }
 
-    fn init(&mut self, parent: &mut GameObject) {}
+    fn init(&mut self, _parent: &mut GameObject) {}
 
     fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32) {
         let transform = &mut parent.borrow_mut().transform;

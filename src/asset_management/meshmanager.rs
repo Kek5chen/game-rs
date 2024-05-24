@@ -12,6 +12,7 @@ pub struct MeshManager<'a> {
     device: &'a Device,
 }
 
+#[allow(dead_code)]
 impl<'a> MeshManager<'a> {
     pub(crate) fn new(device: &'a Device) -> MeshManager<'a> {
         MeshManager {

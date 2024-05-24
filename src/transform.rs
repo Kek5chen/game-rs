@@ -12,6 +12,7 @@ pub struct Transform {
     invert_position: bool,
 }
 
+#[allow(dead_code)]
 impl Transform {
     pub fn new() -> Self {
         Transform {

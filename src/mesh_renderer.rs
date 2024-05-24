@@ -24,7 +24,7 @@ impl MeshRenderer {
 impl Drawable for MeshRenderer {
     fn setup(
         &mut self,
-        device: &Device,
+        _device: &Device,
         queue: &Queue,
         world: &mut World,
         model_uniform_bind_group_layout: &BindGroupLayout,
