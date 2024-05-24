@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
+use chrono::Local;
 
 fn fetch_git_hash() -> Option<String> {
     use std::process::Command;
