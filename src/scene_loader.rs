@@ -239,7 +239,7 @@ impl SceneLoader {
             )
             .collect();
 
-        let mesh = Mesh::new(vertices, None, material_ranges);
+        let mesh = Mesh::new(vertices, None, Some(material_ranges));
         let id = world.assets.meshes.add_mesh(mesh);
 
         let mut node_obj = node_obj.borrow_mut();

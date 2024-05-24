@@ -58,7 +58,7 @@ fn init(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>> {
         .transform
         .set_position(Vector3::new(0.0, 1.0, 5.0));
 
-    let mesh = Mesh::new(CUBE.to_vec(), Some(CUBE_INDICES.to_vec()));
+    let mesh = Mesh::new(CUBE.to_vec(), Some(CUBE_INDICES.to_vec()), None);
     let mesh_id = world.assets.meshes.add_mesh(mesh);
     obj2.borrow_mut()
         .set_drawable(Some(MeshRenderer::new(mesh_id)));

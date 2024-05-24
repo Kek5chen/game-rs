@@ -92,8 +92,17 @@ impl Drawable for MeshRenderer {
         rpass.set_vertex_buffer(0, (*runtime_mesh).data.vertices_buf.slice(..));
         rpass.set_bind_group(1, &(*runtime_mesh).data.model_bind_group, &[]);
         if let Some(i_buffer) = (*runtime_mesh).data.indices_buf.as_ref() {
-            rpass.set_index_buffer(i_buffer.slice(..), IndexFormat::Uint32);
-            rpass.draw_indexed(0..(*runtime_mesh).data.indices_num as u32, 0, 0..1);
+            for (mat_id, range) in &(*mesh).material_ranges {
+                let material: *const RuntimeMaterial = world
+                    .assets
+                    .materials
+                    .get_runtime_material(*mat_id)
+                    .unwrap();
+                
+                rpass.set_bind_group(2, &(*material).bind_group, &[]);
+                rpass.set_index_buffer(i_buffer.slice(..), IndexFormat::Uint32);
+                rpass.draw_indexed(range.clone(), 0, 0..1);
+            }
         } else {
             for (mat_id, range) in &(*mesh).material_ranges {
                 let material: *const RuntimeMaterial = world

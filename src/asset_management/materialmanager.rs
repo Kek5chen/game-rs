@@ -17,7 +17,7 @@ use crate::world::World;
 
 pub type MaterialId = usize;
 
-const FALLBACK_MATERIAL_ID: usize = 0;
+pub const FALLBACK_MATERIAL_ID: usize = 0;
 
 pub struct Material {
     pub name: String,

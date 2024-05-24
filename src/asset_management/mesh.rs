@@ -5,7 +5,7 @@ use cgmath::{Vector2, Vector3};
 use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
-use crate::asset_management::materialmanager::MaterialId;
+use crate::asset_management::materialmanager::{FALLBACK_MATERIAL_ID, MaterialId};
 use crate::object::ModelData;
 
 #[derive(Copy, Clone)]
@@ -50,13 +50,13 @@ pub struct RuntimeMeshData {
 }
 
 pub struct MeshVertexData<T> {
-    vertices: Vec<T>,
-    indices: Option<Vec<u32>>, // <--- put this
+    pub(crate) vertices: Vec<T>,
+    pub(crate) indices: Option<Vec<u32>>, // <--- put this
 } //         |
   //         |
 pub struct Mesh {
     //         here
-    data: MeshVertexData<Vertex3D>,
+    pub(crate) data: MeshVertexData<Vertex3D>,
     pub material_ranges: Vec<(MaterialId, Range<u32>)>,
 }
 
@@ -68,8 +68,18 @@ impl Mesh {
     pub fn new(
         vertices: Vec<Vertex3D>,
         indices: Option<Vec<u32>>,
-        material_ranges: Vec<(MaterialId, Range<u32>)>,
+        material_ranges: Option<Vec<(MaterialId, Range<u32>)>>,
     ) -> Box<Mesh> {
+        let mut material_ranges = material_ranges.unwrap_or_default();
+        
+        if material_ranges.is_empty() {
+            if let Some(indices) = &indices {
+                material_ranges.push((FALLBACK_MATERIAL_ID, 0u32..indices.len() as u32))
+            } else {
+                material_ranges.push((FALLBACK_MATERIAL_ID, 0u32..vertices.len() as u32))
+            }
+        }
+        
         Box::new(Mesh {
             data: MeshVertexData::<Vertex3D> { vertices, indices },
             material_ranges,
