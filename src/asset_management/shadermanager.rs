@@ -44,7 +44,7 @@ impl<'a> ShaderManager<'a> {
                 label: Some("Camera Uniform Bind Group Layout"),
                 entries: &[BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: ShaderStages::VERTEX,
+                    visibility: ShaderStages::VERTEX_FRAGMENT,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -58,7 +58,7 @@ impl<'a> ShaderManager<'a> {
                 label: Some("Model Uniform Bind Group Layout"),
                 entries: &[BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: ShaderStages::VERTEX,
+                    visibility: ShaderStages::VERTEX_FRAGMENT,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -93,6 +93,22 @@ impl<'a> ShaderManager<'a> {
                     },
                     BindGroupLayoutEntry {
                         binding: 2,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Sampler(SamplerBindingType::NonFiltering),
+                        count: None,
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Texture {
+                            sample_type: TextureSampleType::Float { filterable: true },
+                            view_dimension: TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 4,
                         visibility: ShaderStages::FRAGMENT,
                         ty: BindingType::Sampler(SamplerBindingType::NonFiltering),
                         count: None,

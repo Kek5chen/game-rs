@@ -384,20 +384,19 @@ impl SceneLoader {
         let diffuse_tex = material.textures.get(&TextureType::Diffuse);
         let diffuse_tex_id = diffuse_tex.map(|tex| Self::load_texture(world, tex.clone()));
 
-        let normals = material
-            .textures
-            .get(&TextureType::Normals)
-            .map(|tex| Self::load_texture(world, tex.clone()));
+        let normal_tex = material.textures.get(&TextureType::Normals);
+        let normal_tex_id = normal_tex.map(|tex| Self::load_texture(world, tex.clone()));
+        
         let shininess = Self::extract_float_property(&material.properties, "shininess", 0.0);
         let new_material = Material {
             name,
             diffuse,
             shininess,
+            diffuse_texture: diffuse_tex_id,
+            normal_texture: normal_tex_id,
             shininess_texture: None,
             opacity: 1.0,
             shader,
-            normal_texture: normals,
-            diffuse_texture: diffuse_tex_id,
         };
         world.assets.materials.add_material(new_material)
     }

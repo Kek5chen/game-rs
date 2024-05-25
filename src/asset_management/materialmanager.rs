@@ -63,7 +63,7 @@ impl Material {
                 .unwrap();
             let normal_texture_id = self.diffuse_texture.unwrap_or(FALLBACK_NORMAL_TEXTURE);
             // TODO: Implement normal texture into bind group
-            let _normal_texture = (*world)
+            let normal_texture = (*world)
                 .assets
                 .textures
                 .get_runtime_texture_ensure_init(normal_texture_id, device, queue)
@@ -90,6 +90,14 @@ impl Material {
                     BindGroupEntry {
                         binding: 2,
                         resource: BindingResource::Sampler(&diffuse_texture.sampler),
+                    },
+                    BindGroupEntry {
+                        binding: 3,
+                        resource: BindingResource::TextureView(&normal_texture.view),
+                    },
+                    BindGroupEntry {
+                        binding: 4,
+                        resource: BindingResource::Sampler(&normal_texture.sampler),
                     },
                 ],
             });
