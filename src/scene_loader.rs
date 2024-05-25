@@ -292,6 +292,7 @@ impl SceneLoader {
         world: &mut World,
         texture: Rc<RefCell<russimp::material::Texture>>,
     ) -> TextureId {
+        // TODO: Don't load textures that were loaded before and are just shared between two materials
         let texture = texture.borrow();
         match &texture.data {
             DataContent::Texel(_) => panic!("I CAN'T ADD TEXLESLSSE YET PLS HELP"),
