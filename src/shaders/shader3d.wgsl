@@ -9,7 +9,10 @@ struct VInput {
 struct VOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
-    @location(1) vnorm: vec3<f32>,
+    @location(1) frag_pos: vec3<f32>,
+    @location(2) vnorm: vec3<f32>,
+    @location(3) tangent: vec3<f32>,
+    @location(4) bitangent: vec3<f32>,
 }
 
 struct CameraData {
@@ -49,15 +52,24 @@ var t_diffuse: texture_2d<f32>;
 @group(2) @binding(2)
 var s_diffuse: sampler;
 
+@group(2) @binding(3)
+var t_normal: texture_2d<f32>;
+
+@group(2) @binding(4)
+var s_normal: sampler;
+
 @vertex
 fn vs_main(in: VInput) -> VOutput {
     var out: VOutput;
 
-    let mvp_matrix = camera.view_proj_mat * model.model_mat;
+    let model_view_mat = camera.view_proj_mat * model.model_mat;
 
-    out.position = mvp_matrix * vec4<f32>(in.vpos, 1.0);
-    out.tex_coords = vec2<f32>(in.vtex.x, 1 - in.vtex.y);
-    out.vnorm = in.vnorm;
+    out.position = model_view_mat * vec4<f32>(in.vpos, 1.0);
+    out.tex_coords = vec2<f32>(in.vtex.x, 1.0 - in.vtex.y);
+    out.frag_pos = (model.model_mat * vec4<f32>(in.vpos, 1.0)).xyz;
+    out.vnorm = normalize((model.model_mat * vec4<f32>(in.vnorm, 0.0)).xyz);
+    out.tangent = normalize((model.model_mat * vec4<f32>(in.vtan, 0.0)).xyz);
+    out.bitangent = normalize((model.model_mat * vec4<f32>(in.vbitan, 0.0)).xyz);
 
     return out;
 }
