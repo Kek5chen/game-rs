@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use bytemuck::{Pod, Zeroable};
-use cgmath::Vector3;
+use nalgebra::Vector3;
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindingResource, Buffer,
     BufferUsages, Device, Queue,

@@ -5,10 +5,10 @@ use std::f32::consts::PI;
 use std::rc::Rc;
 
 use bytemuck::Contiguous;
-use cgmath::{InnerSpace, Matrix3, Matrix4, Vector2, Vector3, Zero};
-use cgmath::num_traits::ToPrimitive;
 use itertools::izip;
-use log::{warn};
+use log::warn;
+use nalgebra::{Matrix3, Matrix4, Vector2, Vector3};
+use num_traits::{ToPrimitive, Zero};
 use russimp::material::{DataContent, MaterialProperty, PropertyTypeInfo, TextureType};
 use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
@@ -121,35 +121,35 @@ impl SceneLoader {
     }
 
     fn matrix_to_euler(matrix: Matrix3<f32>) -> Vector3<f32> {
-        let sy = -matrix.z.x;
+        let sy = -matrix.m31;
 
         if sy.abs() > 1.0 - 1e-6 {
             // Gimbal lock detected, handle the singularity
             let x = 0.0;
             let y = PI / 2.0 * sy.signum();
-            let z = y.atan2(-matrix.x.y);
+            let z = y.atan2(-matrix.m12);
             Vector3::new(x, y, z)
         } else {
-            let x = matrix.z.y.atan2(matrix.z.z);
+            let x = matrix.m32.atan2(matrix.m33);
             let y = sy.asin();
-            let z = matrix.y.x.atan2(matrix.x.x);
+            let z = matrix.m21.atan2(matrix.m11);
             Vector3::new(x, y, z)
         }
     }
 
     fn decompose_matrix(matrix: Matrix4<f32>) -> (Vector3<f32>, Vector3<f32>, Vector3<f32>) {
-        let translation = matrix.w.truncate();
+        let translation = matrix.column(3).xyz();
 
-        let scale_x = matrix.x.truncate().magnitude();
-        let scale_y = matrix.y.truncate().magnitude();
-        let scale_z = matrix.z.truncate().magnitude();
+        let scale_x = matrix.column(0).xyz().norm();
+        let scale_y = matrix.column(1).xyz().norm();
+        let scale_z = matrix.column(2).xyz().norm();
         let scale = Vector3::new(scale_x, scale_y, scale_z);
 
-        let rotation_matrix = Matrix3::from_cols(
-            matrix.x.truncate(),
-            matrix.y.truncate(),
-            matrix.z.truncate(),
-        );
+        let rotation_matrix = Matrix3::from_columns(&[
+            matrix.column(0).xyz() / scale_x,
+            matrix.column(1).xyz() / scale_y,
+            matrix.column(2).xyz() / scale_z,
+        ]);
 
         let rotation = Self::matrix_to_euler(rotation_matrix);
 

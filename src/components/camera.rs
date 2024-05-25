@@ -1,25 +1,28 @@
-use crate::components::Component;
-use crate::object::GameObject;
-use crate::transform::Transform;
-use bytemuck::{Pod, Zeroable};
-use cgmath::{Deg, Matrix4, SquareMatrix, Vector3, Zero};
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use bytemuck::{Pod, Zeroable};
+use nalgebra::{Matrix4, Perspective3, Vector3};
+use num_traits::Zero;
+
+use crate::components::Component;
+use crate::object::GameObject;
+use crate::transform::Transform;
+
 pub struct CameraComp {
-    pub projection: Matrix4<f32>,
+    pub projection: Perspective3<f32>,
 }
 
 impl CameraComp {
     pub fn resize(&mut self, width: f32, height: f32) {
-        self.projection = cgmath::perspective(Deg(60.0), width / height, 0.01, 1000.0);
+        self.projection = Perspective3::new(width / height, 60f32.to_radians(), 0.01, 1000.0);
     }
 }
 
 impl Component for CameraComp {
     fn new() -> Self {
         CameraComp {
-            projection: cgmath::perspective(Deg(60.0), 800.0 / 600.0, 0.01, 1000.0),
+            projection: Perspective3::new(800.0 / 600.0, 60f32.to_radians(), 0.01, 1000.0),
         }
     }
 
@@ -59,13 +62,13 @@ impl CameraData {
             proj_view_mat: Matrix4::identity(),
         }
     }
-    pub fn update(&mut self, proj_matrix: &Matrix4<f32>, cam_transform: &Transform) {
+    pub fn update(&mut self, proj_matrix: &Perspective3<f32>, cam_transform: &Transform) {
         self.pos = *cam_transform.position();
         self.rot = *cam_transform.rotation();
         self.scale = *cam_transform.scale();
         self.view_mat = *cam_transform.full_matrix();
-        self.projection_mat = *proj_matrix;
-        self.proj_view_mat = proj_matrix * cam_transform.full_matrix();
+        self.projection_mat = proj_matrix.to_homogeneous();
+        self.proj_view_mat = self.projection_mat * cam_transform.full_matrix();
     }
 }
 

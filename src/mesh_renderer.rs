@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use cgmath::Matrix4;
+use nalgebra::Matrix4;
 use wgpu::{BindGroupLayout, Device, IndexFormat, Queue, RenderPass};
 
 use crate::asset_management::materialmanager::RuntimeMaterial;
@@ -98,7 +98,7 @@ impl Drawable for MeshRenderer {
                     .materials
                     .get_runtime_material(*mat_id)
                     .unwrap();
-                
+
                 rpass.set_bind_group(2, &(*material).bind_group, &[]);
                 rpass.set_index_buffer(i_buffer.slice(..), IndexFormat::Uint32);
                 rpass.draw_indexed(range.clone(), 0, 0..1);

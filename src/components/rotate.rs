@@ -1,14 +1,14 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use cgmath::{Deg, Vector3};
+use nalgebra::Vector3;
 use rand::random;
 
 use crate::components::Component;
 use crate::object::GameObject;
 
 pub struct RotateComponent {
-    rotate_speed: Deg<f32>,
+    rotate_speed: f32,
     iteration: f64,
 }
 
@@ -18,7 +18,7 @@ impl Component for RotateComponent {
         Self: Sized,
     {
         RotateComponent {
-            rotate_speed: Deg(50.0),
+            rotate_speed: 50.0f32,
             iteration: random(), // TODO: is cool but might lead to odd behavior
         }
     }
@@ -27,7 +27,7 @@ impl Component for RotateComponent {
 
     fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32) {
         let transform = &mut parent.borrow_mut().transform;
-        let y_rot = transform.rotation().y + self.rotate_speed.0 * delta_time;
+        let y_rot = transform.rotation().y + self.rotate_speed * delta_time;
         transform.set_rotation(Vector3::new(
             (self.iteration as f32 / 100.0).sin() * 45.0,
             y_rot,

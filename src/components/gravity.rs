@@ -1,8 +1,10 @@
-use crate::components::Component;
-use crate::object::GameObject;
-use cgmath::Vector3;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+use nalgebra::Vector3;
+
+use crate::components::Component;
+use crate::object::GameObject;
 
 pub struct GravityComp {
     pub acceleration_per_sec: f32,

@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use cgmath::{Matrix4, SquareMatrix};
 use log::{debug, error};
+use nalgebra::{Matrix4, Perspective3};
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, Buffer, BufferUsages, Color,
     CommandEncoder, CommandEncoderDescriptor, LoadOp, Operations, RenderPass,
@@ -186,7 +186,7 @@ impl RuntimeRenderer {
         }
 
         let camera_comp = camera_comp.unwrap();
-        let projection_matrix: &Matrix4<f32> = &camera_comp.borrow_mut().projection;
+        let projection_matrix: &Perspective3<f32> = &camera_comp.borrow_mut().projection;
         let camera_transform = &camera.borrow().transform;
         self.camera_uniform_data
             .update(projection_matrix, camera_transform);

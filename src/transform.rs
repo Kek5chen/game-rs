@@ -1,13 +1,14 @@
-use cgmath::{Deg, Matrix4, SquareMatrix, Vector3, Zero};
+use nalgebra::{Matrix4, Rotation3, Scale3, Translation3, Vector3};
+use num_traits::Zero;
 
 #[repr(C)]
 pub struct Transform {
     pos: Vector3<f32>,
     rot: Vector3<f32>,
     scale: Vector3<f32>,
-    pos_mat: Matrix4<f32>,
-    rot_mat: Matrix4<f32>,
-    scale_mat: Matrix4<f32>,
+    pos_mat: Translation3<f32>,
+    rot_mat: Rotation3<f32>,
+    scale_mat: Scale3<f32>,
     combined_mat: Matrix4<f32>,
     invert_position: bool,
 }
@@ -19,9 +20,9 @@ impl Transform {
             pos: Vector3::zero(),
             rot: Vector3::zero(),
             scale: Vector3::new(1.0, 1.0, 1.0),
-            pos_mat: Matrix4::identity(),
-            rot_mat: Matrix4::identity(),
-            scale_mat: Matrix4::identity(),
+            pos_mat: Translation3::identity(),
+            rot_mat: Rotation3::identity(),
+            scale_mat: Scale3::identity(),
             combined_mat: Matrix4::identity(),
             invert_position: false,
         }
@@ -90,21 +91,25 @@ impl Transform {
         } else {
             self.pos
         };
-        self.pos_mat = Matrix4::from_translation(pos);
+        self.pos_mat = Translation3::from(pos);
     }
 
     fn recalculate_rot_matrix(&mut self) {
-        self.rot_mat = Matrix4::from_angle_x(Deg(self.rot.x))
-            * Matrix4::from_angle_y(Deg(self.rot.y))
-            * Matrix4::from_angle_z(Deg(self.rot.z));
+        self.rot_mat = Rotation3::from_euler_angles(
+            self.rot.x.to_radians(),
+            self.rot.y.to_radians(),
+            self.rot.z.to_radians(),
+        );
     }
 
     fn recalculate_scale_matrix(&mut self) {
-        self.scale_mat = Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, self.scale.z);
+        self.scale_mat = Scale3::from(self.scale);
     }
 
     fn recalculate_combined_matrix(&mut self) {
-        self.combined_mat = self.pos_mat * self.rot_mat * self.scale_mat;
+        self.combined_mat = self.pos_mat.to_homogeneous()
+            * self.rot_mat.to_homogeneous()
+            * self.scale_mat.to_homogeneous();
     }
 
     pub fn full_matrix(&self) -> &Matrix4<f32> {

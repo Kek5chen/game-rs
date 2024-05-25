@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Matrix4, SquareMatrix};
+use nalgebra::Matrix4;
 
 use crate::components::{CameraComp, Component};
 use crate::drawable::Drawable;

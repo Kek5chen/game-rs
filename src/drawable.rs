@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use cgmath::Matrix4;
+use nalgebra::Matrix4;
 use wgpu::{BindGroupLayout, Device, Queue, RenderPass};
 
 use crate::object::GameObject;

@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Vector2, Vector3};
+use nalgebra::{Vector2, Vector3};
 use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
@@ -72,7 +72,7 @@ impl Mesh {
         material_ranges: Option<Vec<(MaterialId, Range<u32>)>>,
     ) -> Box<Mesh> {
         let mut material_ranges = material_ranges.unwrap_or_default();
-        
+
         if material_ranges.is_empty() {
             if let Some(indices) = &indices {
                 material_ranges.push((FALLBACK_MATERIAL_ID, 0u32..indices.len() as u32))
@@ -80,7 +80,7 @@ impl Mesh {
                 material_ranges.push((FALLBACK_MATERIAL_ID, 0u32..vertices.len() as u32))
             }
         }
-        
+
         Box::new(Mesh {
             data: MeshVertexData::<Vertex3D> { vertices, indices },
             material_ranges,

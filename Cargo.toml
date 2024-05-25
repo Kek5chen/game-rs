@@ -12,7 +12,8 @@ winit = { version = "0.29.15", features = ["x11"] }
 env_logger = { version = "0.11.3", features = ["auto-color"] }
 bytemuck = "1.15.0"
 log = "0.4.21"
-cgmath = "0.18.0"
+nalgebra = { version = "0.32.5" }
+num-traits = "0.2.19"
 russimp = "3.2.0"
 itertools = "0.13.0"
 rand = { version = "0.9.0-alpha.1", features = [] }

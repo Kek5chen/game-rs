@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use cgmath::Vector3;
 use env_logger::Env;
 use log::{error, LevelFilter};
+use nalgebra::Vector3;
 use winit::window::Window;
 
 use crate::app::App;
@@ -11,6 +11,7 @@ use crate::buffer::{CUBE, CUBE_INDICES};
 use crate::components::RotateComponent;
 use crate::logichooks::LogicHooks;
 use crate::mesh_renderer::MeshRenderer;
+use crate::scene_loader::SceneLoader;
 use crate::world::World;
 
 mod app;
@@ -51,18 +52,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 fn init(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> {
     let obj1 = world.new_object("Mow");
-    let obj2 = world.new_object("Meoow");
+    let obj2 = SceneLoader::load(world, "testmodels/parenting_and_object_types.fbx")?;
     let camera = world.new_camera();
 
     camera
         .borrow_mut()
         .transform
-        .set_position(Vector3::new(0.0, 1.0, 5.0));
+        .set_position(Vector3::new(0.0, 1.0, 50.0));
 
-    let mesh = Mesh::new(CUBE.to_vec(), Some(CUBE_INDICES.to_vec()), None);
-    let mesh_id = world.assets.meshes.add_mesh(mesh);
-    obj2.borrow_mut()
-        .set_drawable(Some(MeshRenderer::new(mesh_id)));
+    obj2.borrow_mut().transform.set_uniform_scale(0.03);
     obj2.borrow_mut().add_component::<RotateComponent>();
     obj1.borrow_mut().add_child(obj2);
     world.add_child(obj1);
