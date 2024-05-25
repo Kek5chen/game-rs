@@ -78,6 +78,8 @@ fn vs_main(in: VInput) -> VOutput {
 fn fs_main(in: VOutput) -> @location(0) vec4<f32> {
     var diffuse: vec4<f32>;
 
+    // diffuse = vec4<f32>(in.vnorm, 1.0);
+
     if material.use_diffuse_texture != 0 {
         diffuse = textureSample(t_diffuse, s_diffuse, in.tex_coords);
     } else {
