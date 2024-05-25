@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use bytemuck::Contiguous;
 use itertools::izip;
-use log::warn;
+use log::{info, warn};
 use nalgebra::{Matrix3, Matrix4, Vector2, Vector3};
 use num_traits::{ToPrimitive, Zero};
 use russimp::material::{DataContent, MaterialProperty, PropertyTypeInfo, TextureType};
@@ -121,19 +121,19 @@ impl SceneLoader {
     }
 
     fn matrix_to_euler(matrix: Matrix3<f32>) -> Vector3<f32> {
-        let sy = -matrix.m31;
+        let sy = -matrix[(2, 0)];
 
         if sy.abs() > 1.0 - 1e-6 {
             // Gimbal lock detected, handle the singularity
-            let x = 0.0;
+            let x = 0.0f32;
             let y = PI / 2.0 * sy.signum();
-            let z = y.atan2(-matrix.m12);
-            Vector3::new(x, y, z)
+            let z = y.atan2(-matrix[(1, 2)]);
+            Vector3::new(x.to_degrees(), y.to_degrees(), z.to_degrees())
         } else {
-            let x = matrix.m32.atan2(matrix.m33);
+            let x = matrix[(2, 1)].atan2(matrix[(2, 2)]);
             let y = sy.asin();
-            let z = matrix.m21.atan2(matrix.m11);
-            Vector3::new(x, y, z)
+            let z = matrix[(1, 0)].atan2(matrix[(0, 0)]);
+            Vector3::new(x.to_degrees(), y.to_degrees(), z.to_degrees())
         }
     }
 
