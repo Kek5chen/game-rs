@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fs;
 use std::mem::size_of;
 use std::path::Path;
+use std::rc::Rc;
 
 use wgpu::{
     BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType,
@@ -27,18 +28,18 @@ pub struct Shader {
 pub type ShaderId = usize;
 pub const FALLBACK_SHADER_ID: ShaderId = 0;
 
-pub struct ShaderManager<'a> {
+pub struct ShaderManager {
     pub camera_uniform_bind_group_layout: BindGroupLayout,
     pub model_uniform_bind_group_layout: BindGroupLayout,
     pub material_uniform_bind_group_layout: BindGroupLayout,
     next_id: ShaderId,
     shaders: HashMap<ShaderId, Shader>,
-    device: &'a Device,
+    device: Rc<Device>,
 }
 
 #[allow(dead_code)]
-impl<'a> ShaderManager<'a> {
-    pub fn new(device: &'a Device) -> ShaderManager {
+impl ShaderManager {
+    pub fn new(device: Rc<Device>) -> ShaderManager {
         let camera_uniform_bind_group_layout =
             device.create_bind_group_layout(&BindGroupLayoutDescriptor {
                 label: Some("Camera Uniform Bind Group Layout"),

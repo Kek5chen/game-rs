@@ -8,8 +8,8 @@ use winit::event::{Event, KeyEvent, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::WindowBuilder;
-use crate::components::CameraComp;
 
+use crate::components::CameraComp;
 use crate::logichooks::LogicHooks;
 use crate::renderer::{Renderer, RuntimeRenderer};
 use crate::world::World;
@@ -18,7 +18,7 @@ pub struct PrematureApp {
     window_builder: Option<WindowBuilder>,
 }
 
-pub struct App<'a> {
+pub struct App {
     renderer: RuntimeRenderer,
     world: World<'a>,
 }
@@ -39,7 +39,7 @@ impl Default for PrematureApp {
     }
 }
 
-impl<'a> App<'a> {
+impl App {
     #[allow(unused)]
     pub fn create(title: &str, width: u32, height: u32) -> PrematureApp {
         PrematureApp {

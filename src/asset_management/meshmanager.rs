@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use wgpu::{BindGroupLayout, Device};
 
@@ -6,15 +7,15 @@ use crate::asset_management::mesh::{Mesh, RuntimeMesh};
 
 pub type MeshId = usize;
 
-pub struct MeshManager<'a> {
+pub struct MeshManager {
     meshes: HashMap<MeshId, (Box<Mesh>, Option<RuntimeMesh>)>,
     next_id: MeshId,
-    device: &'a Device,
+    device: Rc<Device>,
 }
 
 #[allow(dead_code)]
-impl<'a> MeshManager<'a> {
-    pub(crate) fn new(device: &'a Device) -> MeshManager<'a> {
+impl MeshManager {
+    pub(crate) fn new(device: Rc<Device>) -> MeshManager {
         MeshManager {
             meshes: HashMap::new(),
             next_id: 0,
@@ -77,7 +78,7 @@ impl<'a> MeshManager<'a> {
             Some((mesh, opt_runtime_mesh)) => match opt_runtime_mesh {
                 None => {
                     let runtime_mesh =
-                        mesh.init_runtime(self.device, model_uniform_bind_group_layout);
+                        mesh.init_runtime(&self.device, model_uniform_bind_group_layout);
                     *opt_runtime_mesh = Some(runtime_mesh);
                     opt_runtime_mesh.as_ref()
                 }

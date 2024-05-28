@@ -1,19 +1,20 @@
+use std::rc::Rc;
 use wgpu::{Device, Queue};
 
 use crate::asset_management::{MaterialManager, TextureManager};
 use crate::asset_management::meshmanager::MeshManager;
 
-pub struct AssetManager<'a> {
-    pub textures: TextureManager<'a>,
-    pub materials: MaterialManager<'a>,
-    pub meshes: MeshManager<'a>,
+pub struct AssetManager {
+    pub textures: TextureManager,
+    pub materials: MaterialManager,
+    pub meshes: MeshManager,
 }
 
-impl<'a> AssetManager<'a> {
-    pub fn new(device: &'a Device, queue: &Queue) -> AssetManager<'a> {
+impl AssetManager {
+    pub fn new(device: Rc<Device>, queue: Rc<Queue>) -> AssetManager {
         AssetManager {
-            textures: TextureManager::new(device, queue),
-            materials: MaterialManager::new(device),
+            textures: TextureManager::new(device.clone(), queue),
+            materials: MaterialManager::new(device.clone()),
             meshes: MeshManager::new(device),
         }
     }

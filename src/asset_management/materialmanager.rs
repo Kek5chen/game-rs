@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use bytemuck::{Pod, Zeroable};
 use nalgebra::Vector3;
@@ -132,17 +133,17 @@ pub struct RuntimeMaterial {
     pub(crate) bind_group: BindGroup,
 }
 
-pub struct MaterialManager<'a> {
+pub struct MaterialManager {
     materials: HashMap<usize, (Material, Option<RuntimeMaterial>)>,
     next_id: MaterialId,
-    pub shaders: ShaderManager<'a>,
-    device: &'a Device,
+    pub shaders: ShaderManager,
+    device: Rc<Device>,
 }
 
 #[allow(dead_code)]
-impl<'a> MaterialManager<'a> {
-    pub fn new(device: &'a Device) -> MaterialManager<'a> {
-        let shader_manager = ShaderManager::new(device);
+impl MaterialManager {
+    pub fn new(device: Rc<Device>) -> MaterialManager {
+        let shader_manager = ShaderManager::new(device.clone());
         let fallback = Material {
             name: "Fallback Material".to_string(),
             diffuse: Vector3::new(1.0, 1.0, 1.0),
@@ -223,7 +224,7 @@ impl<'a> MaterialManager<'a> {
                 None => {
                     let runtime_material = material.init_runtime(
                         world,
-                        self.device,
+                        &self.device,
                         queue,
                         material_uniform_bind_group_layout,
                     );

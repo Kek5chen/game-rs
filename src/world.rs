@@ -10,17 +10,16 @@ use crate::components::CameraComp;
 use crate::object::GameObject;
 use crate::transform::Transform;
 
-pub struct World<'a> {
+pub struct World {
     pub objects: Vec<Rc<RefCell<GameObject>>>,
     pub children: Vec<Rc<RefCell<GameObject>>>,
     pub active_camera: Option<Weak<RefCell<GameObject>>>,
-    pub assets: AssetManager<'a>,
+    pub assets: AssetManager,
     last_frame_time: Instant,
 }
 
-impl<'a> World<'a> {
-    pub fn new(device: &'a Device, queue: &Queue) -> World<'a> {
-        World {
+impl World {
+    pub unsafe fn new(device: Rc<Device>, queue: Rc<Queue>) -> Box<World> {
             objects: vec![],
             children: vec![],
             active_camera: None,

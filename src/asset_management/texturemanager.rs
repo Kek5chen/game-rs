@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use wgpu::{
     Device, Extent3d, Queue, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension,
@@ -32,14 +33,14 @@ enum Texture {
 pub type TextureId = usize;
 
 #[allow(dead_code)]
-pub struct TextureManager<'a> {
+pub struct TextureManager {
     textures: HashMap<TextureId, Texture>,
     next_id: TextureId,
-    device: &'a Device,
+    device: Rc<Device>,
 }
 
 #[allow(dead_code)]
-impl<'a> TextureManager<'a> {
+impl TextureManager {
     pub fn generate_new_fallback_diffuse_texture(
         width: u32,
         height: u32,
@@ -57,11 +58,11 @@ impl<'a> TextureManager<'a> {
         diffuse
     }
 
-    pub fn new(device: &'a Device, queue: &Queue) -> TextureManager<'a> {
+    pub fn new(device: Rc<Device>, queue: Rc<Queue>) -> TextureManager {
         let mut manager = TextureManager {
             textures: HashMap::new(),
             next_id: 0,
-            device,
+            device: device.clone(),
         };
 
         const WIDTH: u32 = 35;
@@ -75,9 +76,9 @@ impl<'a> TextureManager<'a> {
         manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, vec![0, 0, 0, 0]);
         manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, vec![0, 0, 0, 0]);
 
-        manager.get_runtime_texture_ensure_init(FALLBACK_DIFFUSE_TEXTURE, device, queue);
-        manager.get_runtime_texture_ensure_init(FALLBACK_NORMAL_TEXTURE, device, queue);
-        manager.get_runtime_texture_ensure_init(FALLBACK_SHININESS_TEXTURE, device, queue);
+        manager.get_runtime_texture_ensure_init(FALLBACK_DIFFUSE_TEXTURE, &device, &queue);
+        manager.get_runtime_texture_ensure_init(FALLBACK_NORMAL_TEXTURE, &device, &queue);
+        manager.get_runtime_texture_ensure_init(FALLBACK_SHININESS_TEXTURE, &device, &queue);
 
         manager
     }

@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use wgpu::{
     Adapter
 
@@ -13,8 +14,8 @@ use winit::window::Window;
 
 pub struct State {
     pub(crate) surface: Surface<'static>,
-    pub(crate) device: Device,
-    pub(crate) queue: Queue,
+    pub(crate) device: Rc<Device>,
+    pub(crate) queue: Rc<Queue>,
     pub(crate) config: SurfaceConfiguration,
     pub(crate) size: PhysicalSize<u32>,
     pub(crate) depth_texture: Texture,
@@ -50,12 +51,12 @@ impl State {
         adapter
     }
 
-    async fn get_device_and_queue(adapter: &Adapter) -> (Device, Queue) {
+    async fn get_device_and_queue(adapter: &Adapter) -> (Rc<Device>, Rc<Queue>) {
         let (device, queue) = adapter
             .request_device(&DeviceDescriptor::default(), None)
             .await
             .unwrap();
-        (device, queue)
+        (Rc::new(device), Rc::new(queue))
     }
 
     fn configure_surface(
