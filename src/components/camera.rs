@@ -1,6 +1,3 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use bytemuck::{Pod, Zeroable};
 use nalgebra::{Matrix4, Perspective3, Vector3};
 use num_traits::Zero;
@@ -11,6 +8,7 @@ use crate::transform::Transform;
 
 pub struct CameraComp {
     pub projection: Perspective3<f32>,
+    parent: *mut GameObject,
 }
 
 impl CameraComp {
@@ -20,17 +18,22 @@ impl CameraComp {
 }
 
 impl Component for CameraComp {
-    fn new() -> Self {
+    unsafe fn new(parent: *mut GameObject) -> Self {
         CameraComp {
             projection: Perspective3::new(800.0 / 600.0, 60f32.to_radians(), 0.01, 1000.0),
+            parent,
         }
     }
 
-    fn init(&mut self, parent: &mut GameObject) {
-        parent.transform.set_invert_position(true);
+    unsafe fn init(&mut self) {
+        self.get_parent().transform.set_invert_position(true);
     }
 
-    fn update(&mut self, _parent: Rc<RefCell<GameObject>>, _delta_time: f32) {}
+    unsafe fn update(&mut self) {}
+
+    unsafe fn get_parent(&self) -> &mut GameObject {
+        &mut *self.parent
+    }
 }
 
 // TODO: Remove manual padding somehow?

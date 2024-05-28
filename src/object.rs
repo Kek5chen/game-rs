@@ -28,10 +28,12 @@ impl GameObject {
     }
 
     pub fn add_component<C: Component + 'static>(&mut self) {
-        let mut comp = Box::new(C::new());
-        comp.init(self);
+        unsafe {
+            let mut comp = Box::new(C::new(self));
+            comp.init();
 
-        self.components.push(Rc::new(RefCell::new(comp)));
+            self.components.push(Rc::new(RefCell::new(comp)));
+        }
     }
 
     pub fn get_component<C: Component + 'static>(&mut self) -> Option<Rc<RefCell<Box<C>>>> {

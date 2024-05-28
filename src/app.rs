@@ -20,7 +20,7 @@ pub struct PrematureApp {
 
 pub struct App {
     renderer: RuntimeRenderer,
-    world: World<'a>,
+    world: Box<World>,
 }
 
 #[allow(unused)]
@@ -72,9 +72,8 @@ impl PrematureApp {
 
         // TODO: idk if this is safe. maybe?
         //  edit: probably not :> but it works
-        let device: *const Device = &renderer.state.device;
-        let queue: *const Queue = &renderer.state.queue;
-        let mut world = unsafe { World::new(&*device, &*queue) };
+        let mut world =
+            unsafe { World::new(renderer.state.device.clone(), renderer.state.queue.clone()) };
         let renderer = renderer.init(&mut world.assets);
 
         let app = App { world, renderer };
@@ -94,7 +93,7 @@ impl PrematureApp {
             }
         }
 
-        let world_ptr: *mut World = world;
+        let world_ptr: *mut World = world.as_mut();
         unsafe {
             for obj in &(*world_ptr).objects {
                 if let Some(ref mut drawable) = obj.borrow_mut().drawable {
@@ -130,7 +129,7 @@ impl PrematureApp {
                                     error!("Error happened when calling update function hook: {e}");
                                 }
                             }
-                            
+
                             world.update();
                             renderer.state.update();
                             if !renderer.render_world(world) {
@@ -148,7 +147,7 @@ impl PrematureApp {
                         } => window_target.exit(),
                         WindowEvent::Resized(size) => {
                             renderer.state.resize(*size);
-                            
+
                             // TODO: I am sorry for what is about to come
                             if let Some(cam_opt) = &world.active_camera {
                                 if let Some(cam_opt) = cam_opt.upgrade() {
@@ -157,12 +156,12 @@ impl PrematureApp {
                                             if let Ok(mut comp) = cam_comp.try_borrow_mut() {
                                                 comp.resize(size.width as f32, size.height as f32);
                                             }
-                                        } 
+                                        }
                                     }
                                 }
                             }
                             // TODO: Forgive me. I apologize for the horror i've set upon this world.
-                        },
+                        }
                         _ => {}
                     }
                 }

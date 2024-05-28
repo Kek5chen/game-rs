@@ -1,6 +1,4 @@
 use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[allow(unused_imports)]
 pub use camera::CameraComp;
@@ -15,10 +13,14 @@ pub mod camera;
 pub mod gravity;
 pub mod rotate;
 
+// TODO: resolve unsafe hell
 pub trait Component: Any {
-    fn new() -> Self
+    unsafe fn new(parent: *mut GameObject) -> Self
     where
         Self: Sized;
-    fn init(&mut self, parent: &mut GameObject);
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32);
+    unsafe fn init(&mut self);
+    unsafe fn update(&mut self);
+
+    #[allow(clippy::mut_from_ref)]
+    unsafe fn get_parent(&self) -> &mut GameObject;
 }

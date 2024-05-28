@@ -1,32 +1,38 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use nalgebra::Vector3;
 
 use crate::components::Component;
 use crate::object::GameObject;
+use crate::world::World;
 
 pub struct GravityComp {
     pub acceleration_per_sec: f32,
     velocity: f32,
     max_acceleration: f32,
+    parent: *mut GameObject,
 }
 
 impl Component for GravityComp {
-    fn new() -> Self {
+    unsafe fn new(parent: *mut GameObject) -> Self {
         GravityComp {
             acceleration_per_sec: 9.80665,
             velocity: 0.0,
             max_acceleration: 100.0,
+            parent,
         }
     }
 
-    fn init(&mut self, _parent: &mut GameObject) {}
+    unsafe fn init(&mut self) {}
 
-    fn update(&mut self, parent: Rc<RefCell<GameObject>>, delta_time: f32) {
+    unsafe fn update(&mut self) {
+        let delta_time = World::instance().get_delta_time().as_secs_f32();
+
         self.velocity = (self.velocity - self.acceleration_per_sec * delta_time)
             .clamp(-self.max_acceleration, self.max_acceleration);
-        let transform = &mut parent.borrow_mut().transform;
+        let transform = &mut self.get_parent().transform;
         transform.translate(Vector3::new(0.0, self.velocity, 0.0));
+    }
+
+    unsafe fn get_parent(&self) -> &'static mut GameObject {
+        &mut *self.parent
     }
 }

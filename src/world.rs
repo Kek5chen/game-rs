@@ -10,6 +10,8 @@ use crate::components::CameraComp;
 use crate::object::GameObject;
 use crate::transform::Transform;
 
+static mut G_WORLD: *mut World = std::ptr::null_mut();
+
 pub struct World {
     pub objects: Vec<Rc<RefCell<GameObject>>>,
     pub children: Vec<Rc<RefCell<GameObject>>>,
@@ -20,11 +22,27 @@ pub struct World {
 
 impl World {
     pub unsafe fn new(device: Rc<Device>, queue: Rc<Queue>) -> Box<World> {
+        let mut world = Box::new(World {
             objects: vec![],
             children: vec![],
             active_camera: None,
             assets: AssetManager::new(device, queue),
             last_frame_time: Instant::now(),
+        });
+
+        // create a second mutable reference so G_WORLD can be used in (~un~)safe code
+        G_WORLD = world.as_mut();
+
+        world
+    }
+
+    // TODO: make this an option later when it's too late
+    pub fn instance() -> &'static mut World {
+        unsafe {
+            if G_WORLD.is_null() {
+                panic!("G_WORLD has not been initialized");
+            }
+            &mut *G_WORLD
         }
     }
 
@@ -63,8 +81,7 @@ impl World {
                 let object_ptr = object.as_ptr();
                 for comp in &(*object_ptr).components {
                     let comp_ptr = comp.as_ptr();
-                    let delta_time = self.get_delta_time().as_secs_f32();
-                    (*comp_ptr).update(object.clone(), delta_time)
+                    (*comp_ptr).update();
                 }
             }
         }
@@ -83,11 +100,11 @@ impl World {
             Self::print_objects_rec(&child.borrow().children, i + 1);
         }
     }
-    
+
     fn tick_delta_time(&mut self) {
         self.last_frame_time = Instant::now();
     }
-    
+
     pub fn get_delta_time(&self) -> Duration {
         self.last_frame_time.elapsed()
     }
