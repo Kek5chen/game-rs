@@ -48,3 +48,12 @@ impl Component for RigidBodyComponent {
     }
 }
 
+impl RigidBodyComponent {
+    pub fn get_body(&self) -> Option<&RigidBody> {
+        World::instance().physics.rigid_body_set.get(self.body_handle)
+    }
+    
+    pub fn get_body_mut(&mut self) -> Option<&mut RigidBody> {
+        World::instance().physics.rigid_body_set.get_mut(self.body_handle)
+    }
+}
