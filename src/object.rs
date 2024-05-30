@@ -36,13 +36,21 @@ impl GameObject {
         }
     }
 
-    pub fn get_component<C: Component + 'static>(&mut self) -> Option<Rc<RefCell<Box<C>>>> {
-        let comp = self
-            .components
-            .iter()
-            .find(|&c| c.borrow().as_ref().type_id() == TypeId::of::<CameraComp>())
-            .cloned();
-        unsafe { std::mem::transmute::<_, Option<Rc<RefCell<Box<C>>>>>(comp) }
+    // FIXME: this works for now but is stupidly fucked up. 
+    //   only change this if entity ids are used for Components in the future :>>
+    pub fn get_component<C: Component + 'static>(&self) -> Option<Rc<RefCell<Box<C>>>> {
+        for component in &self.components {
+            let raw_ptr: *const Box<dyn Component> = component.as_ptr();
+            let type_id = unsafe { (**raw_ptr).type_id() };
+
+            if type_id == TypeId::of::<C>() {
+                return Some(unsafe {
+                    let rc_clone = Rc::clone(component);
+                    std::mem::transmute(rc_clone)
+                });
+            }
+        }
+        None
     }
 }
 
