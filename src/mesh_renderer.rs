@@ -56,7 +56,7 @@ impl Drawable for MeshRenderer {
     fn update(
         &mut self,
         world: &mut World,
-        parent: Rc<RefCell<GameObject>>,
+        parent: Rc<RefCell<Box<GameObject>>>,
         queue: &Queue,
         outer_transform: &Matrix4<f32>,
     ) {

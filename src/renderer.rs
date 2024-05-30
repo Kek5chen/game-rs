@@ -242,7 +242,7 @@ impl RuntimeRenderer {
         &self,
         world: &mut World,
         rpass: &mut RenderPass,
-        children: &Vec<Rc<RefCell<GameObject>>>,
+        children: &Vec<Rc<RefCell<Box<GameObject>>>>,
         combined_matrix: Matrix4<f32>,
     ) {
         let world_ptr: *mut World = world;

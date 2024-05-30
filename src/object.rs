@@ -5,20 +5,20 @@ use std::rc::Rc;
 use bytemuck::{Pod, Zeroable};
 use nalgebra::Matrix4;
 
-use crate::components::{CameraComp, Component};
+use crate::components::Component;
 use crate::drawable::Drawable;
 use crate::transform::Transform;
 
 pub struct GameObject {
     pub name: String,
-    pub children: Vec<Rc<RefCell<GameObject>>>,
+    pub children: Vec<Rc<RefCell<Box<GameObject>>>>,
     pub transform: Transform,
     pub drawable: Option<Box<dyn Drawable>>,
     pub components: Vec<Rc<RefCell<Box<dyn Component>>>>,
 }
 
 impl GameObject {
-    pub fn add_child(&mut self, child: Rc<RefCell<GameObject>>) {
+    pub fn add_child(&mut self, child: Rc<RefCell<Box<GameObject>>>) {
         // TODO: Make the children know who it's owned by because of circling references
         self.children.push(child)
     }
@@ -67,7 +67,7 @@ impl ModelData {
         }
     }
 
-    pub fn update(&mut self, object: Rc<RefCell<GameObject>>, outer_transform: &Matrix4<f32>) {
+    pub fn update(&mut self, object: Rc<RefCell<Box<GameObject>>>, outer_transform: &Matrix4<f32>) {
         self.model_mat = outer_transform * object.borrow_mut().transform.full_matrix();
     }
 }

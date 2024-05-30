@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use bytemuck::Contiguous;
 use itertools::izip;
-use log::{info, warn};
+use log::warn;
 use nalgebra::{Matrix3, Matrix4, Vector2, Vector3};
 use num_traits::{ToPrimitive, Zero};
 use russimp::material::{DataContent, MaterialProperty, PropertyTypeInfo, TextureType};
@@ -31,7 +31,7 @@ impl SceneLoader {
     pub(crate) fn load(
         world: &mut World,
         path: &str,
-    ) -> Result<Rc<RefCell<GameObject>>, Box<dyn Error>> {
+    ) -> Result<Rc<RefCell<Box<GameObject>>>, Box<dyn Error>> {
         let mut scene = Scene::from_file(
             path,
             vec![
@@ -62,7 +62,7 @@ impl SceneLoader {
         world: &mut World,
         scene: &Scene,
         node: &Rc<Node>,
-        node_obj: Rc<RefCell<GameObject>>,
+        node_obj: Rc<RefCell<Box<GameObject>>>,
     ) {
         Self::load_data(world, scene, node, node_obj.clone());
         for child in node.children.borrow().iter() {
@@ -160,7 +160,7 @@ impl SceneLoader {
         world: &mut World,
         scene: &Scene,
         node: &Rc<Node>,
-        node_obj: Rc<RefCell<GameObject>>,
+        node_obj: Rc<RefCell<Box<GameObject>>>,
     ) {
         if node.meshes.is_empty() {
             return;
@@ -386,7 +386,7 @@ impl SceneLoader {
 
         let normal_tex = material.textures.get(&TextureType::Normals);
         let normal_tex_id = normal_tex.map(|tex| Self::load_texture(world, tex.clone()));
-        
+
         let shininess = Self::extract_float_property(&material.properties, "shininess", 0.0);
         let new_material = Material {
             name,

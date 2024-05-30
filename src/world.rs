@@ -13,9 +13,9 @@ use crate::transform::Transform;
 static mut G_WORLD: *mut World = std::ptr::null_mut();
 
 pub struct World {
-    pub objects: Vec<Rc<RefCell<GameObject>>>,
-    pub children: Vec<Rc<RefCell<GameObject>>>,
-    pub active_camera: Option<Weak<RefCell<GameObject>>>,
+    pub objects: Vec<Rc<RefCell<Box<GameObject>>>>,
+    pub children: Vec<Rc<RefCell<Box<GameObject>>>>,
+    pub active_camera: Option<Weak<RefCell<Box<GameObject>>>>,
     pub assets: AssetManager,
     last_frame_time: Instant,
 }
@@ -46,31 +46,31 @@ impl World {
         }
     }
 
-    pub fn new_object(&mut self, name: &str) -> Rc<RefCell<GameObject>> {
-        let obj = GameObject {
+    pub fn new_object(&mut self, name: &str) -> Rc<RefCell<Box<GameObject>>> {
+        let obj = Box::new(GameObject {
             name: name.to_owned(),
             children: vec![],
             transform: Transform::new(),
             drawable: None,
             components: vec![],
-        };
+        });
 
         self.objects.push(Rc::new(RefCell::new(obj)));
         self.objects.last().cloned().unwrap()
     }
 
-    pub fn new_camera(&mut self) -> Rc<RefCell<GameObject>> {
+    pub fn new_camera(&mut self) -> Rc<RefCell<Box<GameObject>>> {
         let obj = self.new_object("Camera");
 
         obj.borrow_mut().add_component::<CameraComp>();
 
         if self.active_camera.is_none() {
-            self.active_camera = Some(Rc::<RefCell<GameObject>>::downgrade(&obj));
+            self.active_camera = Some(Rc::<RefCell<Box<GameObject>>>::downgrade(&obj));
         }
         obj
     }
 
-    pub fn add_child(&mut self, obj: Rc<RefCell<GameObject>>) {
+    pub fn add_child(&mut self, obj: Rc<RefCell<Box<GameObject>>>) {
         self.children.push(obj)
     }
 
@@ -94,7 +94,7 @@ impl World {
         Self::print_objects_rec(&self.children, 0)
     }
 
-    pub fn print_objects_rec(children: &Vec<Rc<RefCell<GameObject>>>, i: i32) {
+    pub fn print_objects_rec(children: &Vec<Rc<RefCell<Box<GameObject>>>>, i: i32) {
         for child in children {
             info!("{}- {}", "  ".repeat(i as usize), &child.borrow().name);
             Self::print_objects_rec(&child.borrow().children, i + 1);
