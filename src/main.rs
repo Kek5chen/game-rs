@@ -22,11 +22,13 @@ mod drawable;
 mod logichooks;
 mod mesh_renderer;
 mod object;
+mod physics;
 mod renderer;
 mod scene_loader;
 mod state;
 mod transform;
 mod world;
+mod hacks;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
