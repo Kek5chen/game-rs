@@ -95,4 +95,12 @@ impl MeshColliderComponent {
 
         self.linked_to_body = Some(h_body);
     }
+    
+    pub fn get_collider(&self) -> Option<&Collider> {
+        World::instance().physics.collider_set.get(self.phys_handle)
+    }
+
+    pub fn get_collider_mut(&mut self) -> Option<&mut Collider> {
+        World::instance().physics.collider_set.get_mut(self.phys_handle)
+    }
 }
