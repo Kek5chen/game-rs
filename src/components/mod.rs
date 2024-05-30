@@ -3,14 +3,20 @@ use std::any::Any;
 #[allow(unused_imports)]
 pub use camera::CameraComp;
 #[allow(unused_imports)]
+pub use collider::MeshColliderComponent;
+#[allow(unused_imports)]
 pub use gravity::GravityComp;
+#[allow(unused_imports)]
+pub use rigid_body::RigidBodyComponent;
 #[allow(unused_imports)]
 pub use rotate::RotateComponent;
 
 use crate::object::GameObject;
 
 pub mod camera;
+pub mod collider;
 pub mod gravity;
+pub mod rigid_body;
 pub mod rotate;
 
 // TODO: resolve unsafe hell

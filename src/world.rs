@@ -8,6 +8,7 @@ use wgpu::{Device, Queue};
 use crate::asset_management::AssetManager;
 use crate::components::CameraComp;
 use crate::object::GameObject;
+use crate::physics::simulator::PhysicsSimulator;
 use crate::transform::Transform;
 
 static mut G_WORLD: *mut World = std::ptr::null_mut();
@@ -17,6 +18,7 @@ pub struct World {
     pub children: Vec<Rc<RefCell<Box<GameObject>>>>,
     pub active_camera: Option<Weak<RefCell<Box<GameObject>>>>,
     pub assets: AssetManager,
+    pub physics: PhysicsSimulator,
     last_frame_time: Instant,
 }
 
@@ -28,6 +30,7 @@ impl World {
             active_camera: None,
             assets: AssetManager::new(device, queue),
             last_frame_time: Instant::now(),
+            physics: PhysicsSimulator::default(),
         });
 
         // create a second mutable reference so G_WORLD can be used in (~un~)safe code
@@ -84,6 +87,7 @@ impl World {
                     (*comp_ptr).update();
                 }
             }
+            self.physics.step();
         }
 
         self.tick_delta_time();

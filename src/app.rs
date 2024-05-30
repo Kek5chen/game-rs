@@ -151,7 +151,7 @@ impl PrematureApp {
                             // TODO: I am sorry for what is about to come
                             if let Some(cam_opt) = &world.active_camera {
                                 if let Some(cam_opt) = cam_opt.upgrade() {
-                                    if let Ok(mut cam) = cam_opt.try_borrow_mut() {
+                                    if let Ok(cam) = cam_opt.try_borrow_mut() {
                                         if let Some(cam_comp) = cam.get_component::<CameraComp>() {
                                             if let Ok(mut comp) = cam_comp.try_borrow_mut() {
                                                 comp.resize(size.width as f32, size.height as f32);
