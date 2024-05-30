@@ -1,5 +1,6 @@
 use std::any::TypeId;
 use std::cell::RefCell;
+use std::mem;
 use std::rc::Rc;
 
 use bytemuck::{Pod, Zeroable};
@@ -7,6 +8,7 @@ use nalgebra::Matrix4;
 
 use crate::components::Component;
 use crate::drawable::Drawable;
+use crate::hacks;
 use crate::transform::Transform;
 
 pub struct GameObject {
@@ -27,12 +29,21 @@ impl GameObject {
         self.drawable = drawable;
     }
 
-    pub fn add_component<C: Component + 'static>(&mut self) {
+    pub fn add_component<C: Component + 'static>(&mut self) -> &mut C {
+        
         unsafe {
-            let mut comp = Box::new(C::new(self));
+            let mut comp: Box<dyn Component> = Box::new(C::new(self));
+            let comp_inner_ptr: hacks::FatPtr<C> = mem::transmute(comp.as_mut() as *mut dyn Component);
+            let comp_inner_ref: &mut C = &mut *comp_inner_ptr.data;
+            
             comp.init();
+            
+            let comp: Rc<RefCell<Box<dyn Component>>> = Rc::new(RefCell::new(comp));
+            let comp_dyn: Rc<RefCell<Box<dyn Component>>> = comp;
 
-            self.components.push(Rc::new(RefCell::new(comp)));
+            self.components.push(comp_dyn);
+
+            comp_inner_ref
         }
     }
 
