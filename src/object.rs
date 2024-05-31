@@ -79,7 +79,7 @@ impl ModelData {
     }
 
     pub fn update(&mut self, object: Rc<RefCell<Box<GameObject>>>, outer_transform: &Matrix4<f32>) {
-        self.model_mat = outer_transform * object.borrow_mut().transform.full_matrix();
+        self.model_mat = outer_transform * object.borrow_mut().transform.full_matrix().to_homogeneous();
     }
 }
 

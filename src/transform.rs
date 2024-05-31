@@ -1,4 +1,4 @@
-use nalgebra::{Matrix4, Rotation3, Scale3, Translation3, Vector3};
+use nalgebra::{Affine3, Rotation3, Scale3, Translation3, Vector3};
 use num_traits::Zero;
 
 #[repr(C)]
@@ -9,7 +9,7 @@ pub struct Transform {
     pos_mat: Translation3<f32>,
     rot_mat: Rotation3<f32>,
     scale_mat: Scale3<f32>,
-    combined_mat: Matrix4<f32>,
+    combined_mat: Affine3<f32>,
     invert_position: bool,
 }
 
@@ -23,7 +23,7 @@ impl Transform {
             pos_mat: Translation3::identity(),
             rot_mat: Rotation3::identity(),
             scale_mat: Scale3::identity(),
-            combined_mat: Matrix4::identity(),
+            combined_mat: Affine3::identity(),
             invert_position: false,
         }
     }
@@ -107,12 +107,14 @@ impl Transform {
     }
 
     fn recalculate_combined_matrix(&mut self) {
-        self.combined_mat = self.pos_mat.to_homogeneous()
-            * self.rot_mat.to_homogeneous()
-            * self.scale_mat.to_homogeneous();
+        self.combined_mat = Affine3::from_matrix_unchecked(
+            self.pos_mat.to_homogeneous()
+                * self.rot_mat.to_homogeneous()
+                * self.scale_mat.to_homogeneous(),
+        );
     }
 
-    pub fn full_matrix(&self) -> &Matrix4<f32> {
+    pub fn full_matrix(&self) -> &Affine3<f32> {
         &self.combined_mat
     }
 }

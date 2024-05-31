@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use nalgebra::{Matrix4, Perspective3, Vector3};
+use nalgebra::{Affine3, Matrix4, Perspective3, Vector3};
 use num_traits::Zero;
 
 use crate::components::Component;
@@ -46,7 +46,7 @@ pub struct CameraData {
     _padding1: f32,
     scale: Vector3<f32>,
     _padding2: f32,
-    view_mat: Matrix4<f32>,
+    view_mat: Affine3<f32>,
     projection_mat: Matrix4<f32>,
     pub proj_view_mat: Matrix4<f32>,
 }
@@ -60,7 +60,7 @@ impl CameraData {
             _padding1: 0.0,
             scale: Vector3::zero(),
             _padding2: 0.0,
-            view_mat: Matrix4::identity(),
+            view_mat: Affine3::identity(),
             projection_mat: Matrix4::identity(),
             proj_view_mat: Matrix4::identity(),
         }
@@ -71,7 +71,7 @@ impl CameraData {
         self.scale = *cam_transform.scale();
         self.view_mat = *cam_transform.full_matrix();
         self.projection_mat = proj_matrix.to_homogeneous();
-        self.proj_view_mat = self.projection_mat * cam_transform.full_matrix();
+        self.proj_view_mat = self.projection_mat * cam_transform.full_matrix().to_homogeneous();
     }
 }
 

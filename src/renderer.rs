@@ -253,7 +253,7 @@ impl RuntimeRenderer {
                     &mut *world_ptr,
                     rpass,
                     &(*child_ptr).children,
-                    combined_matrix * (*child_ptr).transform.full_matrix(),
+                    combined_matrix * (*child_ptr).transform.full_matrix().to_homogeneous(),
                 );
             }
             let object_ptr = child.as_ptr();
