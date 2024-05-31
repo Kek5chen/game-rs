@@ -1,3 +1,4 @@
+use nalgebra::Vector3;
 use rapier3d::prelude::*;
 
 use crate::asset_management::meshmanager::MeshId;
@@ -35,6 +36,9 @@ impl Component for Collider3D {
             let body_comp = (*self.parent).get_component::<RigidBodyComponent>();
             if let Some(body_comp) = body_comp {
                 self.link_to_rigid_body(Some(body_comp.borrow().body_handle));
+                self.get_collider_mut()
+                    .unwrap()
+                    .set_translation(Vector3::zeros());
             } else {
                 let translation = *(*self.parent).transform.position();
                 self.get_collider_mut()
