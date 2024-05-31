@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use bytemuck::{Pod, Zeroable};
-use nalgebra::{Vector2, Vector3};
+use nalgebra::{Point, Vector2, Vector3};
 use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
@@ -135,5 +135,29 @@ impl Mesh {
         RuntimeMesh {
             data: runtime_mesh_data,
         }
+    }
+}
+
+impl MeshVertexData<Vertex3D> {
+    pub fn make_triangle_indices(&self) -> Vec<[u32; 3]> {
+        match &self.indices {
+            None => (0u32..self.vertices.len() as u32)
+                .collect::<Vec<_>>()
+                .chunks_exact(3)
+                .map(|chunk| [chunk[0], chunk[1], chunk[2]])
+                .collect::<Vec<[u32; 3]>>(),
+            Some(indices) => indices
+                .chunks_exact(3)
+                .map(|chunk| [chunk[0], chunk[1], chunk[2]])
+                .collect(),
+        }
+    }
+
+    pub fn make_point_cloud(&self) -> Vec<Point<f32, 3>> {
+        self.vertices
+            .iter()
+            .map(|v| v.position.into())
+            .clone()
+            .collect()
     }
 }

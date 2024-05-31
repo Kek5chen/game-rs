@@ -82,3 +82,23 @@ impl Collider3D {
         self.linked_to_body = h_body;
     }
 }
+
+pub trait MeshShapeExtra<T> {
+    fn mesh(mesh: MeshId) -> Option<T>;
+    fn mesh_convex_hull(mesh: MeshId) -> Option<SharedShape>;
+}
+
+impl MeshShapeExtra<SharedShape> for SharedShape {
+    fn mesh(mesh: MeshId) -> Option<SharedShape> {
+        let mesh = World::instance().assets.meshes.get_raw_mesh(mesh)?;
+        let vertices = mesh.data.make_point_cloud();
+        let indices = mesh.data.make_triangle_indices();
+        Some(SharedShape::trimesh(vertices, indices))
+    }
+
+    fn mesh_convex_hull(mesh: MeshId) -> Option<SharedShape> {
+        let mesh = World::instance().assets.meshes.get_raw_mesh(mesh)?;
+        let vertices = mesh.data.make_point_cloud();
+        SharedShape::convex_hull(&vertices)
+    }
+}
