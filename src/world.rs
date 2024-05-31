@@ -19,6 +19,7 @@ pub struct World {
     pub active_camera: Option<Weak<RefCell<Box<GameObject>>>>,
     pub assets: AssetManager,
     pub physics: PhysicsSimulator,
+    delta_time: Duration,
     last_frame_time: Instant,
 }
 
@@ -31,6 +32,7 @@ impl World {
             assets: AssetManager::new(device, queue),
             last_frame_time: Instant::now(),
             physics: PhysicsSimulator::default(),
+            delta_time: Duration::default(),
         });
 
         // create a second mutable reference so G_WORLD can be used in (~un~)safe code
@@ -88,14 +90,14 @@ impl World {
     }
 
     pub fn update(&mut self) {
+        self.tick_delta_time();
+        
         unsafe {
             self.execute_component_func(Component::update);
             self.execute_component_func(Component::late_update);
             self.physics.step();
             self.execute_component_func(Component::post_update);
         }
-
-        self.tick_delta_time();
     }
 
     pub fn print_objects(&self) {
@@ -111,10 +113,11 @@ impl World {
     }
 
     fn tick_delta_time(&mut self) {
+        self.delta_time = self.last_frame_time.elapsed();
         self.last_frame_time = Instant::now();
     }
 
     pub fn get_delta_time(&self) -> Duration {
-        self.last_frame_time.elapsed()
+        self.delta_time
     }
 }

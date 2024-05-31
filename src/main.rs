@@ -1,4 +1,7 @@
+use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::error::Error;
+use std::sync::Mutex;
 
 use env_logger::Env;
 use log::{error, LevelFilter};
@@ -73,16 +76,29 @@ fn init(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+static LAST_FRAME_TIMES: Mutex<RefCell<VecDeque<f32>>> = Mutex::new(RefCell::new(VecDeque::new()));
+const RUNNING_SIZE: usize = 60;
+
 fn update(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>> {
+    let last_times = LAST_FRAME_TIMES.lock()?;
+    let mut last_times = last_times.borrow_mut();
+    
+    let frame_time = world.get_delta_time().as_secs_f32();
+    if last_times.len() >= RUNNING_SIZE {
+        last_times.pop_front();
+    }
+    last_times.push_back(frame_time);
+    
+    let mean_delta_time: f32 = last_times.iter().sum::<f32>() / last_times.len() as f32;
     window.set_title(&format!(
         "{} - v.{} - built on {} at {} - FPS: [ {} ] #{}",
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION"),
         env!("BUILD_DATE"),
         env!("BUILD_TIME"),
-        (1.0 / world.get_delta_time().as_secs_f32()) as u32,
+        (1.0 / mean_delta_time) as u32,
         env!("GIT_HASH"),
     ));
-    
+
     Ok(())
 }
