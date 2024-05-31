@@ -5,44 +5,39 @@ use crate::components::{Component, RigidBodyComponent};
 use crate::object::GameObject;
 use crate::world::World;
 
-pub enum MeshColliderType {
+#[derive(Clone)]
+pub enum ColliderType {
     Sphere(f32),         // radius
     Cube(f32, f32, f32), // width, height, depth
     Mesh(MeshId),
 }
 
-pub struct MeshColliderComponent {
-    mesh_type: MeshColliderType,
-    parent: *mut GameObject,
+pub struct Collider3D {
+    coll_type: ColliderType,
     pub phys_handle: ColliderHandle,
     linked_to_body: Option<RigidBodyHandle>,
     collider: Collider,
+    parent: *mut GameObject,
 }
 
-impl Component for MeshColliderComponent {
-    unsafe fn new(parent: *mut GameObject) -> Self {
-        let mut mesh_type = MeshColliderType::Cube(100.0, 100.0, 100.0);
-
-        let collider = match mesh_type {
-            MeshColliderType::Sphere(radius) => ColliderBuilder::ball(radius),
-            MeshColliderType::Cube(x, y, z) => ColliderBuilder::cuboid(x, y, z),
-            MeshColliderType::Mesh(_) => ColliderBuilder::ball(1.0),
-        }
-        .density(1.0)
-        .restitution(1.0)
-        .build();
-
-        let handle = World::instance()
+impl Component for Collider3D {
+    unsafe fn new(parent: *mut GameObject) -> Self
+    where
+        Self: Sized,
+    {
+        let coll_type = ColliderType::Cube(1.0, 1.0, 1.0);
+        let collider = Self::default_collider(&coll_type);
+        let phys_handle = World::instance()
             .physics
             .collider_set
             .insert(collider.clone());
 
-        MeshColliderComponent {
-            mesh_type,
-            parent,
-            phys_handle: handle,
+        Collider3D {
+            coll_type,
+            phys_handle,
             linked_to_body: None,
             collider,
+            parent,
         }
     }
 
@@ -50,16 +45,14 @@ impl Component for MeshColliderComponent {
 
     unsafe fn update(&mut self) {
         if self.linked_to_body.is_none() {
-            let body_comp = self.get_parent().get_component::<RigidBodyComponent>();
+            let body_comp = (*self.parent).get_component::<RigidBodyComponent>();
             if let Some(body_comp) = body_comp {
-                self.link_to_rigid_body(body_comp.borrow().body_handle);
+                self.link_to_rigid_body(Some(body_comp.borrow().body_handle));
             } else {
-                World::instance()
-                    .physics
-                    .collider_set
-                    .get_mut(self.phys_handle)
+                let translation = *(*self.parent).transform.position();
+                self.get_collider_mut()
                     .unwrap()
-                    .set_translation(*(*self.parent).transform.position());
+                    .set_translation(translation);
             }
         }
     }
@@ -69,15 +62,24 @@ impl Component for MeshColliderComponent {
     }
 }
 
-impl MeshColliderComponent {
-    pub fn link_to_rigid_body(&mut self, h_body: RigidBodyHandle) {
+impl Collider3D {
+    pub fn get_collider(&self) -> Option<&Collider> {
+        World::instance().physics.collider_set.get(self.phys_handle)
+    }
+
+    pub fn get_collider_mut(&mut self) -> Option<&mut Collider> {
+        World::instance()
+            .physics
+            .collider_set
+            .get_mut(self.phys_handle)
+    }
+
+    pub fn reshape(&mut self, coll_type: ColliderType) {
+        let collider = Self::default_collider(&coll_type);
+
+        self.collider = collider;
+
         let world = World::instance();
-
-        let body = world.physics.rigid_body_set.get(h_body);
-        if body.is_none() {
-            return;
-        }
-
         // remove old
         world.physics.collider_set.remove(
             self.phys_handle,
@@ -87,20 +89,33 @@ impl MeshColliderComponent {
         );
 
         // insert new
-        world.physics.collider_set.insert_with_parent(
-            self.collider.clone(),
+        self.phys_handle = world.physics.collider_set.insert(self.collider.clone());
+
+        if let Some(h_body) = self.linked_to_body {
+            self.link_to_rigid_body(Some(h_body));
+        }
+    }
+
+    fn default_collider(coll_type: &ColliderType) -> Collider {
+        match coll_type {
+            ColliderType::Sphere(radius) => ColliderBuilder::ball(*radius),
+            ColliderType::Cube(x, y, z) => ColliderBuilder::cuboid(*x, *y, *z),
+            ColliderType::Mesh(_) => ColliderBuilder::ball(1.0), // FIXME: actual mesh collider
+        }
+        .density(1.0)
+        .restitution(1.0)
+        .build()
+    }
+
+    pub fn link_to_rigid_body(&mut self, h_body: Option<RigidBodyHandle>) {
+        let world = World::instance();
+
+        world.physics.collider_set.set_parent(
+            self.phys_handle,
             h_body,
             &mut world.physics.rigid_body_set,
         );
 
-        self.linked_to_body = Some(h_body);
-    }
-    
-    pub fn get_collider(&self) -> Option<&Collider> {
-        World::instance().physics.collider_set.get(self.phys_handle)
-    }
-
-    pub fn get_collider_mut(&mut self) -> Option<&mut Collider> {
-        World::instance().physics.collider_set.get_mut(self.phys_handle)
+        self.linked_to_body = h_body;
     }
 }

@@ -3,7 +3,7 @@ use std::any::Any;
 #[allow(unused_imports)]
 pub use camera::CameraComp;
 #[allow(unused_imports)]
-pub use collider::MeshColliderComponent;
+pub use collider::Collider3D;
 #[allow(unused_imports)]
 pub use gravity::GravityComp;
 #[allow(unused_imports)]
