@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -7,7 +8,7 @@ use wgpu::{BindGroupLayout, Device, Queue, RenderPass};
 use crate::object::GameObject;
 use crate::world::World;
 
-pub(crate) trait Drawable {
+pub(crate) trait Drawable: Any {
     fn setup(
         &mut self,
         device: &Device,

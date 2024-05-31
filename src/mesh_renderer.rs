@@ -19,6 +19,10 @@ impl MeshRenderer {
     pub fn new(mesh: MeshId) -> Box<MeshRenderer> {
         Box::new(MeshRenderer { mesh })
     }
+    
+    pub fn mesh(&self) -> MeshId {
+        self.mesh
+    }
 }
 
 impl Drawable for MeshRenderer {
