@@ -11,7 +11,7 @@ pub use rigid_body::RigidBodyComponent;
 #[allow(unused_imports)]
 pub use rotate::RotateComponent;
 
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 
 pub mod camera;
 pub mod collider;
@@ -21,7 +21,7 @@ pub mod rotate;
 
 // TODO: resolve unsafe hell
 pub trait Component: Any {
-    unsafe fn new(parent: *mut GameObject) -> Self
+    unsafe fn new(parent: GameObjectId) -> Self
     where
         Self: Sized;
     
@@ -38,5 +38,5 @@ pub trait Component: Any {
     unsafe fn post_update(&mut self) {}
 
     #[allow(clippy::mut_from_ref)]
-    unsafe fn get_parent(&self) -> &mut GameObject;
+    unsafe fn get_parent(&self) -> GameObjectId;
 }

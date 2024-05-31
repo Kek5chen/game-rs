@@ -16,7 +16,7 @@ use crate::asset_management::AssetManager;
 use crate::asset_management::shadermanager::ShaderId;
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 use crate::state::State;
 use crate::world::World;
 
@@ -171,15 +171,11 @@ impl RuntimeRenderer {
         }
 
         let world_ptr: *mut World = world;
-        let camera_rc = unsafe { (*world_ptr).active_camera.as_ref().unwrap().upgrade() };
-        if camera_rc.is_none() {
-            debug!("Couldn't take ownership of camera");
-            return;
-        }
+        let camera_rc = unsafe { (*world_ptr).active_camera.as_ref().unwrap() };
 
-        let camera = camera_rc.unwrap();
+        let camera = camera_rc;
         let camera_comp: Option<Rc<RefCell<Box<CameraComp>>>> =
-            camera.borrow_mut().get_component::<CameraComp>();
+            camera.get_component::<CameraComp>();
         if camera_comp.is_none() {
             debug!("Camera didn't have a camera component");
             return;
@@ -187,7 +183,7 @@ impl RuntimeRenderer {
 
         let camera_comp = camera_comp.unwrap();
         let projection_matrix: &Perspective3<f32> = &camera_comp.borrow_mut().projection;
-        let camera_transform = &camera.borrow().transform;
+        let camera_transform = &camera.transform;
         self.camera_uniform_data
             .update(projection_matrix, camera_transform);
         self.state.queue.write_buffer(
@@ -232,7 +228,7 @@ impl RuntimeRenderer {
             self.traverse_and_render(
                 &mut *world_ptr,
                 &mut rpass,
-                &world.children,
+                &mut world.children,
                 Matrix4::identity(),
             );
         }
@@ -242,22 +238,20 @@ impl RuntimeRenderer {
         &self,
         world: &mut World,
         rpass: &mut RenderPass,
-        children: &Vec<Rc<RefCell<Box<GameObject>>>>,
+        children: &mut [GameObjectId],
         combined_matrix: Matrix4<f32>,
     ) {
         let world_ptr: *mut World = world;
         for child in children {
-            let child_ptr = child.as_ptr();
-            if !(*child_ptr).children.is_empty() {
+            if !child.children.is_empty() {
                 self.traverse_and_render(
                     &mut *world_ptr,
                     rpass,
-                    &(*child_ptr).children,
-                    combined_matrix * (*child_ptr).transform.full_matrix().to_homogeneous(),
+                    &mut child.clone().children,
+                    combined_matrix * child.transform.full_matrix().to_homogeneous(),
                 );
             }
-            let object_ptr = child.as_ptr();
-            for drawable in &mut (*object_ptr).drawable {
+            for drawable in &mut child.clone().drawable {
                 {
                     drawable.update(
                         &mut *world_ptr,

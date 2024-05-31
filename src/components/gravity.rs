@@ -1,18 +1,18 @@
 use nalgebra::Vector3;
 
 use crate::components::Component;
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 use crate::world::World;
 
 pub struct GravityComp {
     pub acceleration_per_sec: f32,
     velocity: f32,
     max_acceleration: f32,
-    parent: *mut GameObject,
+    parent: GameObjectId,
 }
 
 impl Component for GravityComp {
-    unsafe fn new(parent: *mut GameObject) -> Self {
+    unsafe fn new(parent: GameObjectId) -> Self {
         GravityComp {
             acceleration_per_sec: 9.80665,
             velocity: 0.0,
@@ -30,7 +30,7 @@ impl Component for GravityComp {
         transform.translate(Vector3::new(0.0, self.velocity, 0.0));
     }
 
-    unsafe fn get_parent(&self) -> &'static mut GameObject {
-        &mut *self.parent
+    unsafe fn get_parent(&self) -> GameObjectId {
+        self.parent
     }
 }

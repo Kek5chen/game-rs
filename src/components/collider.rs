@@ -3,17 +3,17 @@ use rapier3d::prelude::*;
 
 use crate::asset_management::meshmanager::MeshId;
 use crate::components::{Component, RigidBodyComponent};
-use crate::object::GameObject;
+use crate::object::{GameObject, GameObjectId};
 use crate::world::World;
 
 pub struct Collider3D {
     pub phys_handle: ColliderHandle,
     linked_to_body: Option<RigidBodyHandle>,
-    parent: *mut GameObject,
+    parent: GameObjectId,
 }
 
 impl Component for Collider3D {
-    unsafe fn new(parent: *mut GameObject) -> Self
+    unsafe fn new(parent: GameObjectId) -> Self
     where
         Self: Sized,
     {
@@ -40,7 +40,7 @@ impl Component for Collider3D {
                     .unwrap()
                     .set_translation(Vector3::zeros());
             } else {
-                let translation = *(*self.parent).transform.position();
+                let translation = (*self.parent).transform.position();
                 self.get_collider_mut()
                     .unwrap()
                     .set_translation(translation);
@@ -48,8 +48,8 @@ impl Component for Collider3D {
         }
     }
 
-    unsafe fn get_parent(&self) -> &mut GameObject {
-        &mut *self.parent
+    unsafe fn get_parent(&self) -> GameObjectId {
+        self.parent
     }
 }
 

@@ -56,18 +56,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn init(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> {
-    let obj1 = world.new_object("Mow");
     let obj2 = SceneLoader::load(world, "testmodels/parenting_and_object_types.fbx")?;
-    let camera = world.new_camera();
+    // I know that the following code is broken regularly. And I have an explanation for this:
+    // I never update the example because I make more sophisticated examples to test.
+    // And I'm too lazy to delete my code, update the example, and then put my test code back.
+    // Maybe some time in the future I'll actually split this into a library. But for now,
+    // have some broken code :)
+    let mut obj1 = world.new_object("Mow");
+    let mut camera = world.new_camera();
 
     camera
-        .borrow_mut()
         .transform
         .set_position(Vector3::new(0.0, 1.0, 50.0));
 
-    obj2.borrow_mut().transform.set_uniform_scale(0.03);
-    obj2.borrow_mut().add_component::<RotateComponent>();
-    obj1.borrow_mut().add_child(obj2);
+    obj2.transform.set_uniform_scale(0.03);
+    obj2.add_component::<RotateComponent>();
+    obj1.add_child(obj2);
     world.add_child(obj1);
     world.add_child(camera);
 

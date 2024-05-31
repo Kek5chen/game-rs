@@ -1,14 +1,13 @@
 use bytemuck::{Pod, Zeroable};
 use nalgebra::{Affine3, Matrix4, Perspective3, Vector3};
-use num_traits::Zero;
 
 use crate::components::Component;
-use crate::object::GameObject;
+use crate::object::{GameObject, GameObjectId};
 use crate::transform::Transform;
 
 pub struct CameraComp {
     pub projection: Perspective3<f32>,
-    parent: *mut GameObject,
+    parent: GameObjectId,
 }
 
 impl CameraComp {
@@ -18,7 +17,7 @@ impl CameraComp {
 }
 
 impl Component for CameraComp {
-    unsafe fn new(parent: *mut GameObject) -> Self {
+    unsafe fn new(parent: GameObjectId) -> Self {
         CameraComp {
             projection: Perspective3::new(800.0 / 600.0, 60f32.to_radians(), 0.01, 1000.0),
             parent,
@@ -29,8 +28,8 @@ impl Component for CameraComp {
         self.get_parent().transform.set_invert_position(true);
     }
 
-    unsafe fn get_parent(&self) -> &mut GameObject {
-        &mut *self.parent
+    unsafe fn get_parent(&self) -> GameObjectId {
+        self.parent
     }
 }
 
@@ -52,11 +51,11 @@ pub struct CameraData {
 impl CameraData {
     pub fn empty() -> Self {
         CameraData {
-            pos: Vector3::zero(),
+            pos: Vector3::zeros(),
             _padding0: 0.0,
-            rot: Vector3::zero(),
+            rot: Vector3::zeros(),
             _padding1: 0.0,
-            scale: Vector3::zero(),
+            scale: Vector3::zeros(),
             _padding2: 0.0,
             view_mat: Affine3::identity(),
             projection_mat: Matrix4::identity(),
@@ -64,7 +63,7 @@ impl CameraData {
         }
     }
     pub fn update(&mut self, proj_matrix: &Perspective3<f32>, cam_transform: &Transform) {
-        self.pos = *cam_transform.position();
+        self.pos = cam_transform.position();
         self.rot = *cam_transform.rotation();
         self.scale = *cam_transform.scale();
         self.view_mat = *cam_transform.full_matrix();

@@ -1,6 +1,3 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use nalgebra::Matrix4;
 use wgpu::{BindGroupLayout, Device, IndexFormat, Queue, RenderPass};
 
@@ -8,7 +5,7 @@ use crate::asset_management::materialmanager::RuntimeMaterial;
 use crate::asset_management::mesh::{Mesh, RuntimeMesh};
 use crate::asset_management::meshmanager::MeshId;
 use crate::drawable::Drawable;
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 use crate::world::World;
 
 pub struct MeshRenderer {
@@ -60,7 +57,7 @@ impl Drawable for MeshRenderer {
     fn update(
         &mut self,
         world: &mut World,
-        parent: Rc<RefCell<Box<GameObject>>>,
+        parent: GameObjectId,
         queue: &Queue,
         outer_transform: &Matrix4<f32>,
     ) {
@@ -72,7 +69,7 @@ impl Drawable for MeshRenderer {
         runtime_mesh
             .data
             .model_data
-            .update(parent.clone(), outer_transform);
+            .update(parent, outer_transform);
         queue.write_buffer(
             &runtime_mesh.data.model_data_buffer,
             0,

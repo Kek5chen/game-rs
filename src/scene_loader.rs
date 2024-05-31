@@ -20,7 +20,7 @@ use crate::asset_management::mesh::{Mesh, Vertex3D};
 use crate::asset_management::shadermanager::ShaderId;
 use crate::asset_management::texturemanager::TextureId;
 use crate::mesh_renderer::MeshRenderer;
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 use crate::world::World;
 
 #[allow(dead_code)]
@@ -31,7 +31,7 @@ impl SceneLoader {
     pub(crate) fn load(
         world: &mut World,
         path: &str,
-    ) -> Result<Rc<RefCell<Box<GameObject>>>, Box<dyn Error>> {
+    ) -> Result<GameObjectId, Box<dyn Error>> {
         let mut scene = Scene::from_file(
             path,
             vec![
@@ -54,7 +54,7 @@ impl SceneLoader {
         let materials = Self::load_materials(&scene, world);
         Self::update_material_indicies(&mut scene, materials);
         let root_object = world.new_object(&root.name);
-        Self::load_rec(world, &scene, &root, root_object.clone());
+        Self::load_rec(world, &scene, &root, root_object);
         Ok(root_object)
     }
 
@@ -62,12 +62,12 @@ impl SceneLoader {
         world: &mut World,
         scene: &Scene,
         node: &Rc<Node>,
-        node_obj: Rc<RefCell<Box<GameObject>>>,
+        mut node_obj: GameObjectId,
     ) {
-        Self::load_data(world, scene, node, node_obj.clone());
+        Self::load_data(world, scene, node, node_obj);
         for child in node.children.borrow().iter() {
             let obj = world.new_object(&child.name);
-            node_obj.borrow_mut().add_child(obj.clone());
+            node_obj.add_child(obj);
             Self::load_rec(world, scene, child, obj);
         }
     }
@@ -160,7 +160,7 @@ impl SceneLoader {
         world: &mut World,
         scene: &Scene,
         node: &Rc<Node>,
-        node_obj: Rc<RefCell<Box<GameObject>>>,
+        node_obj: GameObjectId,
     ) {
         if node.meshes.is_empty() {
             return;
@@ -244,7 +244,7 @@ impl SceneLoader {
         let mesh = Mesh::new(vertices, None, Some(material_ranges));
         let id = world.assets.meshes.add_mesh(mesh);
 
-        let mut node_obj = node_obj.borrow_mut();
+        let mut node_obj = node_obj;
         node_obj.drawable = Some(MeshRenderer::new(id));
 
         // set transformations
@@ -256,7 +256,7 @@ impl SceneLoader {
             [t.a4, t.b4, t.c4, t.d4],
         ])); // convert row to column major (assimp to cgmath)
 
-        node_obj.transform.set_position(position);
+        node_obj.transform.set_local_position(position);
         node_obj.transform.set_rotation(rotation);
         node_obj.transform.set_nonuniform_scale(scale);
     }

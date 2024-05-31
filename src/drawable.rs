@@ -1,11 +1,9 @@
 use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use nalgebra::Matrix4;
 use wgpu::{BindGroupLayout, Device, Queue, RenderPass};
 
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 use crate::world::World;
 
 pub(crate) trait Drawable: Any {
@@ -20,7 +18,7 @@ pub(crate) trait Drawable: Any {
     fn update(
         &mut self,
         world: &mut World,
-        parent: Rc<RefCell<Box<GameObject>>>,
+        parent: GameObjectId,
         queue: &Queue,
         outer_transform: &Matrix4<f32>,
     );

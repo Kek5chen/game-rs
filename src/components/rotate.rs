@@ -2,17 +2,17 @@ use nalgebra::Vector3;
 use rand::random;
 
 use crate::components::Component;
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 use crate::world::World;
 
 pub struct RotateComponent {
     rotate_speed: f32,
     iteration: f64,
-    parent: *mut GameObject,
+    parent: GameObjectId,
 }
 
 impl Component for RotateComponent {
-    unsafe fn new(parent: *mut GameObject) -> Self
+    unsafe fn new(parent: GameObjectId) -> Self
     where
         Self: Sized,
     {
@@ -35,7 +35,7 @@ impl Component for RotateComponent {
         self.iteration += 1.01;
     }
 
-    unsafe fn get_parent(&self) -> &'static mut GameObject {
-        &mut *self.parent
+    unsafe fn get_parent(&self) -> GameObjectId {
+        self.parent
     }
 }

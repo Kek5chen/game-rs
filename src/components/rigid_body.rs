@@ -2,19 +2,19 @@ use nalgebra::Vector3;
 use rapier3d::prelude::*;
 
 use crate::components::Component;
-use crate::object::GameObject;
+use crate::object::GameObjectId;
 use crate::world::World;
 
 pub struct RigidBodyComponent {
-    parent: *mut GameObject,
+    parent: GameObjectId,
     pub body_handle: RigidBodyHandle,
 }
 
 impl Component for RigidBodyComponent {
-    unsafe fn new(parent: *mut GameObject) -> Self {
+    unsafe fn new(parent: GameObjectId) -> Self {
         let rigid_body = RigidBodyBuilder::dynamic()
-            .translation(*(*parent).transform.position())
-            .rotation((*(*parent).transform.rotation()).map(|rad| rad.to_degrees()))
+            .translation(parent.transform.position())
+            .rotation((*parent.transform.rotation()).map(|rad| rad.to_degrees()))
             .build();
 
         let body_handle = World::instance().physics.rigid_body_set.insert(rigid_body);
@@ -33,7 +33,7 @@ impl Component for RigidBodyComponent {
             .rigid_body_set
             .get_mut(self.body_handle);
         if let Some(rb) = rb {
-            rb.set_translation(*(*self.parent).transform.position(), false);
+            rb.set_translation(self.parent.transform.position(), false);
             // TODO: Sync rotation too, but transfer to using quaternions first I think.
             // let rot = (*self.parent).transform.rotation();
             // rb.set_rotation(Rotation::from_euler_angles(rot.x, rot.y, rot.z), false);
@@ -58,8 +58,8 @@ impl Component for RigidBodyComponent {
         }
     }
 
-    unsafe fn get_parent(&self) -> &mut GameObject {
-        &mut *self.parent
+    unsafe fn get_parent(&self) -> GameObjectId {
+        self.parent
     }
 }
 

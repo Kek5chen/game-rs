@@ -1,5 +1,5 @@
 use nalgebra::{Affine3, Rotation3, Scale3, Translation3, Vector3};
-use num_traits::Zero;
+use crate::object::GameObjectId;
 
 #[repr(C)]
 pub struct Transform {
@@ -11,20 +11,22 @@ pub struct Transform {
     scale_mat: Scale3<f32>,
     combined_mat: Affine3<f32>,
     invert_position: bool,
+    owner: GameObjectId,
 }
 
 #[allow(dead_code)]
 impl Transform {
-    pub fn new() -> Self {
+    pub fn new(owner: GameObjectId) -> Self {
         Transform {
-            pos: Vector3::zero(),
-            rot: Vector3::zero(),
+            pos: Vector3::zeros(),
+            rot: Vector3::zeros(),
             scale: Vector3::new(1.0, 1.0, 1.0),
             pos_mat: Translation3::identity(),
             rot_mat: Rotation3::identity(),
             scale_mat: Scale3::identity(),
             combined_mat: Affine3::identity(),
             invert_position: false,
+            owner,
         }
     }
 
