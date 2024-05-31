@@ -6,7 +6,7 @@ use log::info;
 use wgpu::{Device, Queue};
 
 use crate::asset_management::AssetManager;
-use crate::components::CameraComp;
+use crate::components::{CameraComp, Component};
 use crate::object::GameObject;
 use crate::physics::simulator::PhysicsSimulator;
 use crate::transform::Transform;
@@ -76,18 +76,23 @@ impl World {
     pub fn add_child(&mut self, obj: Rc<RefCell<Box<GameObject>>>) {
         self.children.push(obj)
     }
+    
+    unsafe fn execute_component_func(&mut self, func: unsafe fn(&mut dyn Component)) {
+        for object in &self.objects {
+            let object_ptr = object.as_ptr();
+            for comp in &(*object_ptr).components {
+                let comp_ptr = comp.as_ptr();
+                func(&mut **comp_ptr)
+            }
+        }
+    }
 
     pub fn update(&mut self) {
-        // i've grown wiser
         unsafe {
-            for object in &self.objects {
-                let object_ptr = object.as_ptr();
-                for comp in &(*object_ptr).components {
-                    let comp_ptr = comp.as_ptr();
-                    (*comp_ptr).update();
-                }
-            }
+            self.execute_component_func(Component::update);
+            self.execute_component_func(Component::late_update);
             self.physics.step();
+            self.execute_component_func(Component::post_update);
         }
 
         self.tick_delta_time();

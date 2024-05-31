@@ -23,8 +23,6 @@ impl Component for RotateComponent {
         }
     }
 
-    unsafe fn init(&mut self) {}
-
     unsafe fn update(&mut self) {
         let transform = &mut self.get_parent().transform;
         let delta_time = World::instance().get_delta_time().as_secs_f32();

@@ -30,8 +30,6 @@ impl Component for Collider3D {
         }
     }
 
-    unsafe fn init(&mut self) {}
-
     unsafe fn update(&mut self) {
         if self.linked_to_body.is_none() {
             let body_comp = (*self.parent).get_component::<RigidBodyComponent>();

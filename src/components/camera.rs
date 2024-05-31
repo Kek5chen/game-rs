@@ -29,8 +29,6 @@ impl Component for CameraComp {
         self.get_parent().transform.set_invert_position(true);
     }
 
-    unsafe fn update(&mut self) {}
-
     unsafe fn get_parent(&self) -> &mut GameObject {
         &mut *self.parent
     }

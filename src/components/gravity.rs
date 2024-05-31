@@ -21,8 +21,6 @@ impl Component for GravityComp {
         }
     }
 
-    unsafe fn init(&mut self) {}
-
     unsafe fn update(&mut self) {
         let delta_time = World::instance().get_delta_time().as_secs_f32();
 
