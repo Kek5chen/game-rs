@@ -29,7 +29,7 @@ impl GameObject {
         self.drawable = drawable;
     }
 
-    pub fn add_component<C: Component + 'static>(&mut self) -> &mut C {
+    pub fn add_component<'b, C: Component + 'static>(&mut self) -> &'b mut C {
         
         unsafe {
             let mut comp: Box<dyn Component> = Box::new(C::new(self));
