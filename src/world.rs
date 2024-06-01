@@ -91,8 +91,9 @@ impl World {
         obj
     }
 
-    pub fn add_child(&mut self, obj: GameObjectId) {
+    pub fn add_child(&mut self, mut obj: GameObjectId) {
         self.children.push(obj);
+        obj.parent = None;
     }
 
     unsafe fn execute_component_func(&mut self, func: unsafe fn(&mut dyn Component)) {
