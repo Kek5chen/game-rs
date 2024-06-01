@@ -27,8 +27,6 @@ impl Component for RigidBodyComponent {
         }
     }
 
-    unsafe fn init(&mut self) {}
-
     unsafe fn late_update(&mut self) {
         let rb = World::instance()
             .physics
