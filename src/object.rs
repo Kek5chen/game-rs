@@ -54,9 +54,10 @@ pub struct GameObject {
 }
 
 impl GameObject {
-    pub fn add_child(&mut self, child: GameObjectId) {
+    pub fn add_child(&mut self, mut child: GameObjectId) {
         // TODO: Make the children know who it's owned by because of circling references
         self.children.push(child);
+        child.parent = Some(self.id);
     }
 
     pub fn set_drawable(&mut self, drawable: Option<Box<dyn Drawable>>) {
