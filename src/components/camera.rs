@@ -64,8 +64,8 @@ impl CameraData {
     }
     pub fn update(&mut self, proj_matrix: &Perspective3<f32>, cam_transform: &Transform) {
         self.pos = cam_transform.position();
-        self.rot = *cam_transform.rotation();
-        self.scale = *cam_transform.scale();
+        self.rot = cam_transform.rotation();
+        self.scale = cam_transform.scale();
         self.view_mat = *cam_transform.full_matrix();
         self.projection_mat = proj_matrix.to_homogeneous();
         self.proj_view_mat = self.projection_mat * cam_transform.full_matrix().to_homogeneous();

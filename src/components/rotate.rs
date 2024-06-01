@@ -26,8 +26,8 @@ impl Component for RotateComponent {
     unsafe fn update(&mut self) {
         let transform = &mut self.get_parent().transform;
         let delta_time = World::instance().get_delta_time().as_secs_f32();
-        let y_rot = transform.rotation().y + self.rotate_speed * delta_time;
-        transform.set_rotation(Vector3::new(
+        let y_rot = transform.local_rotation().y + self.rotate_speed * delta_time;
+        transform.set_local_rotation(Vector3::new(
             (self.iteration as f32 / 100.0).sin() * 45.0,
             y_rot,
             0.0,

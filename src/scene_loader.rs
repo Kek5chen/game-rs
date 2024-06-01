@@ -210,8 +210,8 @@ impl SceneLoader {
         .decompose(); // convert row to column major (assimp to cgmath)
 
         node_obj.transform.set_local_position(position);
-        node_obj.transform.set_rotation(rotation);
-        node_obj.transform.set_nonuniform_scale(scale);
+        node_obj.transform.set_local_rotation(rotation);
+        node_obj.transform.set_nonuniform_local_scale(scale);
     }
 
     fn load_materials(scene: &Scene, world: &mut World) -> HashMap<u32, MaterialId> {
