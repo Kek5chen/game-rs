@@ -18,10 +18,12 @@ pub struct PhysicsSimulator {
     pub event_handler: (),
 }
 
+const EARTH_GRAVITY: f32 = 9.81;
+
 impl Default for PhysicsSimulator {
     fn default() -> Self {
         PhysicsSimulator {
-            gravity: Vector3::new(0.0, -900.81, 0.0),
+            gravity: Vector3::new(0.0, -EARTH_GRAVITY, 0.0),
             rigid_body_set: RigidBodySet::default(),
             collider_set: ColliderSet::default(),
             integration_parameters: IntegrationParameters::default(),
