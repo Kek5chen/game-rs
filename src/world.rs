@@ -64,7 +64,7 @@ impl World {
     pub fn new_object(&mut self, name: &str) -> GameObjectId {
         let id = self.next_object_id;
         self.next_object_id += 1;
-        
+
         let obj = Box::new(GameObject {
             id,
             name: name.to_owned(),
@@ -76,13 +76,13 @@ impl World {
         });
 
         self.objects.insert(id, obj);
-        
+
         id
     }
 
     pub fn new_camera(&mut self) -> GameObjectId {
         let mut obj = self.new_object("Camera");
-        
+
         obj.add_component::<CameraComp>();
 
         if self.active_camera.is_none() {
@@ -115,6 +115,14 @@ impl World {
             self.physics.step();
             self.execute_component_func(Component::post_update);
         }
+    }
+
+    pub fn find_object_by_name(&self, name: &str) -> Option<GameObjectId> {
+        self.objects
+            .iter()
+            .find(|(_, o)| o.name == name)
+            .map(|o| o.0)
+            .cloned()
     }
 
     pub fn print_objects(&self) {
