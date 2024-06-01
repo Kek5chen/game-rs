@@ -99,7 +99,7 @@ impl World {
     unsafe fn execute_component_func(&mut self, func: unsafe fn(&mut dyn Component)) {
         for object in self.objects.values() {
             let object_ptr = object;
-            for comp in &(*object_ptr).components {
+            for comp in &object_ptr.components {
                 let comp_ptr = comp.as_ptr();
                 func(&mut **comp_ptr)
             }
