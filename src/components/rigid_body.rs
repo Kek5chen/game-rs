@@ -14,7 +14,7 @@ impl Component for RigidBodyComponent {
     unsafe fn new(parent: GameObjectId) -> Self {
         let rigid_body = RigidBodyBuilder::dynamic()
             .translation(parent.transform.position())
-            .rotation((*parent.transform.rotation()).map(|rad| rad.to_degrees()))
+            .rotation(parent.transform.rotation().map(|deg| deg.to_radians()))
             .build();
 
         let body_handle = World::instance().physics.rigid_body_set.insert(rigid_body);
