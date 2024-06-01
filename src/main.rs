@@ -22,6 +22,7 @@ mod asset_management;
 mod buffer;
 mod components;
 mod drawable;
+mod hacks;
 mod logichooks;
 mod mesh_renderer;
 mod object;
@@ -31,7 +32,7 @@ mod scene_loader;
 mod state;
 mod transform;
 mod world;
-mod hacks;
+mod utils;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

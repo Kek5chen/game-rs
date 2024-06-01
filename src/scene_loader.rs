@@ -21,6 +21,7 @@ use crate::asset_management::shadermanager::ShaderId;
 use crate::asset_management::texturemanager::TextureId;
 use crate::mesh_renderer::MeshRenderer;
 use crate::object::GameObjectId;
+use crate::utils::math::ExtraMatrixMath;
 use crate::world::World;
 
 #[allow(dead_code)]
@@ -28,10 +29,7 @@ pub struct SceneLoader;
 
 #[allow(dead_code)]
 impl SceneLoader {
-    pub(crate) fn load(
-        world: &mut World,
-        path: &str,
-    ) -> Result<GameObjectId, Box<dyn Error>> {
+    pub(crate) fn load(world: &mut World, path: &str) -> Result<GameObjectId, Box<dyn Error>> {
         let mut scene = Scene::from_file(
             path,
             vec![
@@ -58,12 +56,7 @@ impl SceneLoader {
         Ok(root_object)
     }
 
-    fn load_rec(
-        world: &mut World,
-        scene: &Scene,
-        node: &Rc<Node>,
-        mut node_obj: GameObjectId,
-    ) {
+    fn load_rec(world: &mut World, scene: &Scene, node: &Rc<Node>, mut node_obj: GameObjectId) {
         Self::load_data(world, scene, node, node_obj);
         for child in node.children.borrow().iter() {
             let obj = world.new_object(&child.name);
@@ -120,48 +113,7 @@ impl SceneLoader {
         }
     }
 
-    fn matrix_to_euler(matrix: Matrix3<f32>) -> Vector3<f32> {
-        let sy = -matrix[(2, 0)];
-
-        if sy.abs() > 1.0 - 1e-6 {
-            // Gimbal lock detected, handle the singularity
-            let x = 0.0f32;
-            let y = PI / 2.0 * sy.signum();
-            let z = y.atan2(-matrix[(1, 2)]);
-            Vector3::new(x.to_degrees(), y.to_degrees(), z.to_degrees())
-        } else {
-            let x = matrix[(2, 1)].atan2(matrix[(2, 2)]);
-            let y = sy.asin();
-            let z = matrix[(1, 0)].atan2(matrix[(0, 0)]);
-            Vector3::new(x.to_degrees(), y.to_degrees(), z.to_degrees())
-        }
-    }
-
-    fn decompose_matrix(matrix: Matrix4<f32>) -> (Vector3<f32>, Vector3<f32>, Vector3<f32>) {
-        let translation = matrix.column(3).xyz();
-
-        let scale_x = matrix.column(0).xyz().norm();
-        let scale_y = matrix.column(1).xyz().norm();
-        let scale_z = matrix.column(2).xyz().norm();
-        let scale = Vector3::new(scale_x, scale_y, scale_z);
-
-        let rotation_matrix = Matrix3::from_columns(&[
-            matrix.column(0).xyz() / scale_x,
-            matrix.column(1).xyz() / scale_y,
-            matrix.column(2).xyz() / scale_z,
-        ]);
-
-        let rotation = Self::matrix_to_euler(rotation_matrix);
-
-        (translation, rotation, scale)
-    }
-
-    fn load_data(
-        world: &mut World,
-        scene: &Scene,
-        node: &Rc<Node>,
-        node_obj: GameObjectId,
-    ) {
+    fn load_data(world: &mut World, scene: &Scene, node: &Rc<Node>, node_obj: GameObjectId) {
         if node.meshes.is_empty() {
             return;
         }
@@ -249,12 +201,13 @@ impl SceneLoader {
 
         // set transformations
         let t = node.transformation;
-        let (position, rotation, scale) = Self::decompose_matrix(Matrix4::from([
+        let (position, rotation, scale) = Matrix4::from([
             [t.a1, t.b1, t.c1, t.d1],
             [t.a2, t.b2, t.c2, t.d2],
             [t.a3, t.b3, t.c3, t.d3],
             [t.a4, t.b4, t.c4, t.d4],
-        ])); // convert row to column major (assimp to cgmath)
+        ])
+        .decompose(); // convert row to column major (assimp to cgmath)
 
         node_obj.transform.set_local_position(position);
         node_obj.transform.set_rotation(rotation);
