@@ -1,4 +1,4 @@
-use nalgebra::Vector3;
+use crate::utils::math::QuaternionEuler;
 use rapier3d::prelude::*;
 
 use crate::components::Component;
@@ -12,9 +12,11 @@ pub struct RigidBodyComponent {
 
 impl Component for RigidBodyComponent {
     unsafe fn new(parent: GameObjectId) -> Self {
+        let initial_translation = parent.transform.position();
+        let initial_rotation = parent.transform.rotation().euler_vector();
         let rigid_body = RigidBodyBuilder::dynamic()
-            .translation(parent.transform.position())
-            .rotation(parent.transform.rotation().map(|deg| deg.to_radians()))
+            .translation(initial_translation)
+            .rotation(initial_rotation)
             .build();
 
         let body_handle = World::instance().physics.rigid_body_set.insert(rigid_body);
@@ -34,9 +36,7 @@ impl Component for RigidBodyComponent {
             .get_mut(self.body_handle);
         if let Some(rb) = rb {
             rb.set_translation(self.parent.transform.position(), false);
-            // TODO: Sync rotation too, but transfer to using quaternions first I think.
-            // let rot = (*self.parent).transform.rotation();
-            // rb.set_rotation(Rotation::from_euler_angles(rot.x, rot.y, rot.z), false);
+            rb.set_rotation(self.parent.transform.rotation(), false);
         } else {
             todo!("de-synced - remake_rigid_body();")
         }
@@ -48,13 +48,10 @@ impl Component for RigidBodyComponent {
             .rigid_body_set
             .get_mut(self.body_handle);
         if let Some(rb) = rb {
-            self.get_parent().transform.set_position(*rb.translation());
-            let rot = rb.rotation().euler_angles();
-            self.get_parent().transform.set_rotation(Vector3::new(
-                rot.0.to_degrees(),
-                rot.1.to_degrees(),
-                rot.2.to_degrees(),
-            ));
+            if rb.is_dynamic() {
+                self.get_parent().transform.set_position(*rb.translation());
+                self.get_parent().transform.set_rotation(*rb.rotation());
+            }
         }
     }
 

@@ -2,8 +2,9 @@ use bytemuck::{Pod, Zeroable};
 use nalgebra::{Affine3, Matrix4, Perspective3, Vector3};
 
 use crate::components::Component;
-use crate::object::{GameObject, GameObjectId};
+use crate::object::GameObjectId;
 use crate::transform::Transform;
+use crate::utils::math::QuaternionEuler;
 
 pub struct CameraComp {
     pub projection: Perspective3<f32>,
@@ -64,7 +65,7 @@ impl CameraData {
     }
     pub fn update(&mut self, proj_matrix: &Perspective3<f32>, cam_transform: &Transform) {
         self.pos = cam_transform.position();
-        self.rot = cam_transform.rotation();
+        self.rot = cam_transform.rotation().euler_vector_deg();
         self.scale = cam_transform.scale();
         self.view_mat = *cam_transform.full_matrix();
         self.projection_mat = proj_matrix.to_homogeneous();
