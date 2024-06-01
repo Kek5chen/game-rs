@@ -3,7 +3,7 @@ use rapier3d::prelude::*;
 
 use crate::asset_management::meshmanager::MeshId;
 use crate::components::{Component, RigidBodyComponent};
-use crate::object::{GameObject, GameObjectId};
+use crate::object::GameObjectId;
 use crate::world::World;
 
 pub struct Collider3D {
@@ -17,7 +17,8 @@ impl Component for Collider3D {
     where
         Self: Sized,
     {
-        let shape = SharedShape::cuboid(1.0, 1.0, 1.0);
+        let scale = parent.transform.scale();
+        let shape = SharedShape::cuboid(scale.x, scale.y, scale.z);
         let collider = Self::default_collider(shape);
         let phys_handle = World::instance()
             .physics
@@ -32,19 +33,19 @@ impl Component for Collider3D {
     }
 
     unsafe fn update(&mut self) {
-        if self.linked_to_body.is_none() {
-            let body_comp = (*self.parent).get_component::<RigidBodyComponent>();
-            if let Some(body_comp) = body_comp {
+        let body_comp = (*self.parent).get_component::<RigidBodyComponent>();
+        if let Some(body_comp) = body_comp {
+            if self.linked_to_body.is_none() {
                 self.link_to_rigid_body(Some(body_comp.borrow().body_handle));
                 self.get_collider_mut()
                     .unwrap()
                     .set_translation(Vector3::zeros());
-            } else {
-                let translation = (*self.parent).transform.position();
-                self.get_collider_mut()
-                    .unwrap()
-                    .set_translation(translation);
             }
+        } else {
+            let translation = self.parent.transform.position();
+            self.get_collider_mut()
+                .unwrap()
+                .set_translation(translation);
         }
     }
 
