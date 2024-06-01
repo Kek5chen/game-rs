@@ -61,6 +61,7 @@ impl Drawable for MeshRenderer {
         queue: &Queue,
         outer_transform: &Matrix4<f32>,
     ) {
+        // TODO: Meshes should be able to be shared. Give ModelData to the MeshRenderer
         let runtime_mesh = world
             .assets
             .meshes
