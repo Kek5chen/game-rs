@@ -28,15 +28,13 @@ impl Drawable for MeshRenderer {
         _device: &Device,
         queue: &Queue,
         world: &mut World,
-        model_uniform_bind_group_layout: &BindGroupLayout,
-        material_uniform_bind_group_layout: &BindGroupLayout,
     ) {
         unsafe {
             let world: *mut World = world;
             (*world)
                 .assets
                 .meshes
-                .init_runtime_mesh(self.mesh, model_uniform_bind_group_layout);
+                .init_runtime_mesh(self.mesh);
             let mesh: *const Box<Mesh> = (*world)
                 .assets
                 .meshes
@@ -46,9 +44,7 @@ impl Drawable for MeshRenderer {
             for (mat_id, _) in &(*mesh).material_ranges {
                 (*world).assets.materials.init_runtime_material(
                     &mut *world,
-                    queue,
                     *mat_id,
-                    material_uniform_bind_group_layout,
                 );
             }
         }
@@ -78,7 +74,7 @@ impl Drawable for MeshRenderer {
         )
     }
 
-    unsafe fn draw(&self, world: &World, rpass: &mut RenderPass) {
+    unsafe fn draw(&self, world: &mut World, rpass: &mut RenderPass) {
         let runtime_mesh: *const RuntimeMesh = world
             .assets
             .meshes

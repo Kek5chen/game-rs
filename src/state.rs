@@ -13,6 +13,7 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 pub struct State {
+    pub(crate) instance: Instance,
     pub(crate) surface: Surface<'static>,
     pub(crate) device: Rc<Device>,
     pub(crate) queue: Rc<Queue>,
@@ -106,6 +107,7 @@ impl State {
         let depth_texture = Self::setup_depth_texture(&size, &device);
 
         State {
+            instance,
             surface,
             device,
             queue,

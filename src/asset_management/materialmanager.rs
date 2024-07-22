@@ -9,6 +9,7 @@ use wgpu::{
 };
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
+use crate::asset_management::assetmanager::DefaultGPUObjects;
 use crate::asset_management::shadermanager;
 use crate::asset_management::shadermanager::{ShaderId, ShaderManager};
 use crate::asset_management::texturemanager::{
@@ -29,6 +30,11 @@ pub struct Material {
     pub shininess_texture: Option<TextureId>,
     pub opacity: f32,
     pub shader: ShaderId,
+}
+
+pub struct MaterialItem {
+    raw: Material,
+    runtime: Option<RuntimeMaterial>,
 }
 
 impl Material {
@@ -60,21 +66,21 @@ impl Material {
             let diffuse_texture = (*world)
                 .assets
                 .textures
-                .get_runtime_texture_ensure_init(diffuse_texture_id, device, queue)
+                .get_runtime_texture_ensure_init(diffuse_texture_id)
                 .unwrap();
             let normal_texture_id = self.diffuse_texture.unwrap_or(FALLBACK_NORMAL_TEXTURE);
             // TODO: Implement normal texture into bind group
             let normal_texture = (*world)
                 .assets
                 .textures
-                .get_runtime_texture_ensure_init(normal_texture_id, device, queue)
+                .get_runtime_texture_ensure_init(normal_texture_id)
                 .unwrap();
             let shininess_texture_id = self.diffuse_texture.unwrap_or(FALLBACK_SHININESS_TEXTURE);
             // TODO: Implement shininess texture into bind group
             let _shininess_texture = (*world)
                 .assets
                 .textures
-                .get_runtime_texture_ensure_init(shininess_texture_id, device, queue)
+                .get_runtime_texture_ensure_init(shininess_texture_id)
                 .unwrap();
             let bind_group = device.create_bind_group(&BindGroupDescriptor {
                 label: Some("Material Bind Group"),
@@ -134,16 +140,18 @@ pub struct RuntimeMaterial {
 }
 
 pub struct MaterialManager {
-    materials: HashMap<usize, (Material, Option<RuntimeMaterial>)>,
+    materials: HashMap<usize, MaterialItem>,
     next_id: MaterialId,
     pub shaders: ShaderManager,
-    device: Rc<Device>,
+    device: Option<Rc<Device>>,
+    queue: Option<Rc<Queue>>,
+    default_gpu_objects: Option<Rc<DefaultGPUObjects>>,
 }
 
 #[allow(dead_code)]
 impl MaterialManager {
-    pub fn new(device: Rc<Device>) -> MaterialManager {
-        let shader_manager = ShaderManager::new(device.clone());
+    pub fn new() -> MaterialManager {
+        let shader_manager = ShaderManager::new();
         let fallback = Material {
             name: "Fallback Material".to_string(),
             diffuse: Vector3::new(1.0, 1.0, 1.0),
@@ -158,81 +166,103 @@ impl MaterialManager {
             materials: HashMap::new(),
             next_id: 0,
             shaders: shader_manager,
-            device,
+            device: None,
+            queue: None,
+            default_gpu_objects: None,
         };
         manager.add_material(fallback);
         manager
     }
 
+    pub fn invalidate_runtime(&mut self) {
+        for mat in self.materials.values_mut() {
+            mat.runtime = None;
+        }
+        self.device = None;
+        self.queue = None;
+        self.default_gpu_objects = None;
+        self.shaders.invalidate_runtime();
+    }
+
+    pub fn init_runtime(
+        &mut self,
+        device: Rc<Device>,
+        queue: Rc<Queue>,
+        default_gpu_objects: Rc<DefaultGPUObjects>,
+    ) {
+        self.device = Some(device.clone());
+        self.queue = Some(queue.clone());
+        self.shaders
+            .init_runtime(device, default_gpu_objects.clone());
+        self.default_gpu_objects = Some(default_gpu_objects)
+    }
+
     pub fn add_material(&mut self, material: Material) -> MaterialId {
         let id = self.next_id;
 
-        self.materials.insert(id, (material, None));
+        self.materials.insert(
+            id,
+            MaterialItem {
+                raw: material,
+                runtime: None,
+            },
+        );
         self.next_id += 1;
 
         id
     }
 
-    pub fn get_material_internal_mut(
-        &mut self,
-        id: MaterialId,
-    ) -> Option<&mut (Material, Option<RuntimeMaterial>)> {
+    pub fn get_material_internal_mut(&mut self, id: MaterialId) -> Option<&mut MaterialItem> {
         self.materials.get_mut(&id)
     }
 
     pub fn get_raw_material(&self, id: MaterialId) -> Option<&Material> {
-        self.materials.get(&id).map(|m| &m.0)
+        self.materials.get(&id).map(|m| &m.raw)
     }
 
-    pub fn get_runtime_material(&self, id: MaterialId) -> Option<&RuntimeMaterial> {
-        let mesh = self.materials.get(&id);
-        match mesh {
-            None => None,
-            Some((_, opt_runtime_mesh)) => opt_runtime_mesh.as_ref(),
+    pub fn get_runtime_material(&mut self, id: MaterialId) -> Option<&RuntimeMaterial> {
+        let mat = self.materials.get_mut(&id)?;
+        if mat.runtime.is_none() {
+            mat.runtime = Some(mat.raw.init_runtime(
+                World::instance(),
+                self.device.as_ref().unwrap().as_ref(),
+                self.queue.as_ref().unwrap().as_ref(),
+                &self.default_gpu_objects.as_ref().unwrap().material_uniform_bind_group_layout
+            ));
         }
+        mat.runtime.as_ref()
     }
 
     pub fn get_runtime_material_mut(&mut self, id: MaterialId) -> Option<&mut RuntimeMaterial> {
-        let mesh = self.materials.get_mut(&id);
-        match mesh {
-            None => None,
-            Some((_, opt_runtime_mesh)) => opt_runtime_mesh.as_mut(),
-        }
+        let mat = self.materials.get_mut(&id)?;
+        mat.runtime.as_mut()
     }
 
-    pub fn init_runtime_material(
-        &mut self,
-        world: &mut World,
-        queue: &Queue,
-        id: MaterialId,
-        material_uniform_bind_group_layout: &BindGroupLayout,
-    ) {
-        self.get_runtime_material_or_init(world, queue, id, material_uniform_bind_group_layout);
+    pub fn init_runtime_material(&mut self, world: &mut World, id: MaterialId) {
+        self.get_runtime_material_or_init(world, id);
     }
 
     pub fn get_runtime_material_or_init(
         &mut self,
         world: &mut World,
-        queue: &Queue,
         id: MaterialId,
-        material_uniform_bind_group_layout: &BindGroupLayout,
     ) -> Option<&RuntimeMaterial> {
-        let material = self.materials.get_mut(&id);
-        match material {
-            None => None,
-            Some((material, opt_runtime_material)) => match opt_runtime_material {
-                None => {
-                    let runtime_material = material.init_runtime(
-                        world,
-                        &self.device,
-                        queue,
-                        material_uniform_bind_group_layout,
-                    );
-                    *opt_runtime_material = Some(runtime_material);
-                    opt_runtime_material.as_ref()
-                }
-                Some(runtime_mesh) => Some(runtime_mesh),
-            },
+        let material = self.materials.get_mut(&id)?;
+        if material.runtime.is_some() {
+            return material.runtime.as_ref();
         }
+
+        let runtime_material = material.raw.init_runtime(
+            world,
+            self.device.as_ref().unwrap().as_ref(),
+            self.queue.as_ref().unwrap().as_ref(),
+            &self
+                .default_gpu_objects
+                .as_ref()
+                .unwrap()
+                .material_uniform_bind_group_layout,
+        );
+        material.runtime = Some(runtime_material);
+        material.runtime.as_ref()
     }
 }

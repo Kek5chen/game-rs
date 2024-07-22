@@ -43,14 +43,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .parse_env(log_env) // Or override with whatever env says
         .init();
 
-    let hooks = LogicHooks {
-        init: Some(init),
-        update: Some(update),
-        deinit: None,
-    };
-    let app = App::create("game-rs", 800, 600);
-    if let Err(e) = app.run(hooks).await {
-        error!("{e}")
+    let mut app = App::create("game-rs", 800, 600);
+    app.with_init(Some(funnyinit));
+    app.with_update(Some(update));
+    
+    if let Err(e) = app.run().await {
+        error!("{e}");
     }
 
     Ok(())
@@ -87,13 +85,13 @@ const RUNNING_SIZE: usize = 60;
 fn update(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>> {
     let last_times = LAST_FRAME_TIMES.lock()?;
     let mut last_times = last_times.borrow_mut();
-    
+
     let frame_time = world.get_delta_time().as_secs_f32();
     if last_times.len() >= RUNNING_SIZE {
         last_times.pop_front();
     }
     last_times.push_back(frame_time);
-    
+
     let mean_delta_time: f32 = last_times.iter().sum::<f32>() / last_times.len() as f32;
     window.set_title(&format!(
         "{} - v.{} - built on {} at {} - FPS: [ {} ] #{}",

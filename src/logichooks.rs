@@ -3,7 +3,7 @@ use winit::window::Window;
 
 use crate::world::World;
 
-type HookFunc = fn(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>>;
+pub type HookFunc = fn(world: &mut World, window: &Window) -> Result<(), Box<dyn Error>>;
 
 pub struct LogicHooks {
     pub init: Option<HookFunc>,

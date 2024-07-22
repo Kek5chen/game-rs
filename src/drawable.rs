@@ -1,7 +1,7 @@
 use std::any::Any;
 
 use nalgebra::Matrix4;
-use wgpu::{BindGroupLayout, Device, Queue, RenderPass};
+use wgpu::{Device, Queue, RenderPass};
 
 use crate::object::GameObjectId;
 use crate::world::World;
@@ -12,8 +12,6 @@ pub(crate) trait Drawable: Any {
         device: &Device,
         queue: &Queue,
         world: &mut World,
-        model_bind_group_layout: &BindGroupLayout,
-        material_bind_group_layout: &BindGroupLayout,
     );
     fn update(
         &mut self,
@@ -22,5 +20,5 @@ pub(crate) trait Drawable: Any {
         queue: &Queue,
         outer_transform: &Matrix4<f32>,
     );
-    unsafe fn draw(&self, world: &World, rpass: &mut RenderPass);
+    unsafe fn draw(&self, world: &mut World, rpass: &mut RenderPass);
 }

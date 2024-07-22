@@ -58,6 +58,6 @@ impl PhysicsSimulator {
             &self.physics_hooks,
             &self.event_handler
         );
-        self.query_pipeline.update(&self.rigid_body_set, &self.collider_set)
+        self.query_pipeline.update(&self.collider_set)
     }
 }

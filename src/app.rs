@@ -1,40 +1,47 @@
 use std::error::Error;
-
-use log::error;
-use wgpu::{Device, Queue};
+use futures::executor::block_on;
+use log::{error, info, warn};
+use tokio::runtime::Runtime;
+use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalSize, Size};
 use winit::error::EventLoopError;
 use winit::event::{Event, KeyEvent, WindowEvent};
-use winit::event_loop::EventLoop;
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
-use winit::window::WindowBuilder;
+use winit::window::{WindowAttributes, WindowId};
 
 use crate::components::CameraComp;
-use crate::logichooks::LogicHooks;
-use crate::renderer::{Renderer, RuntimeRenderer};
+use crate::logichooks::{HookFunc, LogicHooks};
+use crate::renderer::Renderer;
 use crate::world::World;
 
 pub struct PrematureApp {
-    window_builder: Option<WindowBuilder>,
+    window_attributes: WindowAttributes,
+    init_cb: Option<HookFunc>,
+    update_cb: Option<HookFunc>,
+    deinit_cb: Option<HookFunc>,
 }
 
 pub struct App {
-    renderer: RuntimeRenderer,
+    renderer: Option<Renderer>,
     world: Box<World>,
+    window_attributes: WindowAttributes,
+    pub hook_funcs: LogicHooks,
 }
 
 #[allow(unused)]
 impl Default for PrematureApp {
     fn default() -> PrematureApp {
         PrematureApp {
-            window_builder: Some(
-                WindowBuilder::new()
-                    .with_inner_size(Size::Physical(PhysicalSize {
-                        width: 800,
-                        height: 600,
-                    }))
-                    .with_title("Default Window"),
-            ),
+            window_attributes: WindowAttributes::default()
+                .with_inner_size(Size::Physical(PhysicalSize {
+                    width: 800,
+                    height: 600,
+                }))
+                .with_title("Default Window"),
+            init_cb: None,
+            update_cb: None,
+            deinit_cb: None,
         }
     }
 }
@@ -43,13 +50,18 @@ impl App {
     #[allow(unused)]
     pub fn create(title: &str, width: u32, height: u32) -> PrematureApp {
         PrematureApp {
-            window_builder: Some(
-                WindowBuilder::new()
-                    .with_inner_size(Size::Physical(PhysicalSize { width, height }))
-                    //.with_resizable(false)
-                    .with_title(title),
-            ),
+            window_attributes: WindowAttributes::default()
+                .with_inner_size(Size::Physical(PhysicalSize { width, height }))
+                //.with_resizable(false)
+                .with_title(title),
+            init_cb: None,
+            update_cb: None,
+            deinit_cb: None,
         }
+    }
+
+    pub fn renderer(&self) -> &Renderer {
+        self.renderer.as_ref().unwrap()
     }
 }
 
@@ -61,110 +73,131 @@ impl PrematureApp {
             }
             e => e?,
         };
-        let window = self
-            .window_builder
-            .take()
-            .unwrap()
-            .build(&event_loop)
-            .unwrap();
+        event_loop.set_control_flow(ControlFlow::Poll);
+        
+        let world = unsafe { World::new() };
 
-        let renderer = Renderer::new(window).await;
-
-        // TODO: idk if this is safe. maybe?
-        //  edit: probably not :> but it works
-        let mut world =
-            unsafe { World::new(renderer.state.device.clone(), renderer.state.queue.clone()) };
-        let renderer = renderer.init(&mut world.assets);
-
-        let app = App { world, renderer };
+        let app = App {
+            renderer: None,
+            world,
+            window_attributes: self.window_attributes.clone(),
+            hook_funcs: LogicHooks {
+                init: self.init_cb,
+                update: self.update_cb,
+                deinit: self.deinit_cb,
+            }
+        };
 
         Ok((event_loop, app))
     }
 
-    pub async fn run(mut self, hooks: LogicHooks) -> Result<(), Box<dyn Error>> {
-        let (event_loop, mut app) = self.init_state().await?;
+    pub fn with_init(&mut self, init: Option<HookFunc>) {
+        self.init_cb = init;
+    }
+    
+    pub fn with_update(&mut self, update: Option<HookFunc>) {
+        self.update_cb = update;
+    }
 
-        let renderer = &mut app.renderer;
-        let world = &mut app.world;
+    pub fn with_deinit(&mut self, deinit: Option<HookFunc>) {
+        self.deinit_cb = deinit;
+    }
+    
+    pub async fn run(mut self) -> Result<(), Box<dyn Error>> {
+        let (event_loop, app) = self.init_state().await?;
+        unsafe {
+            app.run(event_loop).await
+        }
+    }
+}
 
-        if let Some(init) = hooks.init {
-            if let Err(e) = init(world, renderer.window()) {
+impl App {
+    pub async unsafe fn run(
+        mut self,
+        event_loop: EventLoop<()>,
+    ) -> Result<(), Box<dyn Error>> {
+        event_loop.run_app(&mut self).unwrap();
+
+        Ok(())
+    }
+}
+
+impl ApplicationHandler for App {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        info!("RESUMED!");
+        let window = event_loop
+            .create_window(self.window_attributes.clone())
+            .unwrap();
+
+        self.world.assets.invalidate();
+
+        let mut renderer = block_on(Renderer::new(window));
+        let state = &renderer.state;
+
+        self.world.assets.init_runtime(state.device.clone(), state.queue.clone());
+
+        renderer.init(self.world.assets.default_gpu_objects.clone().unwrap());
+
+        self.renderer = Some(renderer);
+
+        if let Some(init) = self.hook_funcs.init {
+            if let Err(e) = init(&mut self.world, self.renderer.as_ref().unwrap().window()) {
                 error!("World init function hook returned: {e}");
             }
         }
+    }
 
-        let world_ptr: *mut World = world.as_mut();
-        unsafe {
-            for obj in (*world_ptr).objects.values_mut() {
-                if let Some(ref mut drawable) = obj.drawable {
-                    drawable.setup(
-                        &renderer.state.device,
-                        &renderer.state.queue,
-                        &mut *world_ptr,
-                        &world
-                            .assets
-                            .materials
-                            .shaders
-                            .model_uniform_bind_group_layout,
-                        &world
-                            .assets
-                            .materials
-                            .shaders
-                            .material_uniform_bind_group_layout,
-                    )
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        window_id: WindowId,
+        event: WindowEvent,
+    ) {
+        let renderer =  self.renderer.as_mut().unwrap();
+        let world = self.world.as_mut();
+        if window_id != renderer.window().id() {
+            return;
+        }
+        if renderer.state.input(&event) {
+           return; 
+        }
+        match event {
+            WindowEvent::RedrawRequested => {
+                if let Some(update_func) = self.hook_funcs.update {
+                    if let Err(e) = update_func(world, renderer.window()) {
+                        error!("Error happened when calling update function hook: {e}");
+                    }
+                }
+
+                world.update();
+                renderer.state.update();
+                if !renderer.render_world(world) {
+                    event_loop.exit();
                 }
             }
-        }
+            WindowEvent::CloseRequested
+            | WindowEvent::KeyboardInput {
+                event:
+                KeyEvent {
+                    physical_key: PhysicalKey::Code(KeyCode::Escape),
+                    ..
+                },
+                ..
+            } => event_loop.exit(),
+            WindowEvent::Resized(size) => {
+                renderer.state.resize(size);
 
-        event_loop.run(move |event, window_target| match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == renderer.window().id() => {
-                if !renderer.state.input(event) {
-                    match event {
-                        WindowEvent::RedrawRequested => {
-                            if let Some(update_func) = hooks.update {
-                                if let Err(e) = update_func(world, renderer.window()) {
-                                    error!("Error happened when calling update function hook: {e}");
-                                }
-                            }
-
-                            world.update();
-                            renderer.state.update();
-                            if !renderer.render_world(world) {
-                                window_target.exit();
-                            }
+                // For I have sinned, this now becomes my recovery.
+                // I was forgiven, shall it come haunt me later.
+                if let Some(cam) = world.active_camera {
+                    if let Some(cam_comp) = cam.get_component::<CameraComp>() {
+                        if let Ok(mut comp) = cam_comp.try_borrow_mut() {
+                            comp.resize(size.width as f32, size.height as f32);
                         }
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            event:
-                                KeyEvent {
-                                    physical_key: PhysicalKey::Code(KeyCode::Escape),
-                                    ..
-                                },
-                            ..
-                        } => window_target.exit(),
-                        WindowEvent::Resized(size) => {
-                            renderer.state.resize(*size);
-
-                            // For I have sinned, this now becomes my recovery.
-                            // I was forgiven, shall it come haunt me later.
-                            if let Some(cam) = world.active_camera {
-                                if let Some(cam_comp) = cam.get_component::<CameraComp>() {
-                                    if let Ok(mut comp) = cam_comp.try_borrow_mut() {
-                                        comp.resize(size.width as f32, size.height as f32);
-                                    }
-                                }
-                            }
-                        }
-                        _ => {}
                     }
                 }
             }
             _ => {}
-        })?;
-
-        Ok(())
+        }
     }
 }

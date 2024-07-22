@@ -9,6 +9,7 @@ use crate::asset_management::AssetManager;
 use crate::components::{CameraComp, Component};
 use crate::object::{GameObject, GameObjectId};
 use crate::physics::simulator::PhysicsSimulator;
+use crate::renderer::Renderer;
 use crate::transform::Transform;
 
 static mut G_WORLD: *mut World = std::ptr::null_mut();
@@ -25,13 +26,13 @@ pub struct World {
 }
 
 impl World {
-    pub unsafe fn new(device: Rc<Device>, queue: Rc<Queue>) -> Box<World> {
+    pub unsafe fn new() -> Box<World> {
         let mut world = Box::new(World {
             objects: HashMap::new(),
             next_object_id: GameObjectId(0),
             children: vec![],
             active_camera: None,
-            assets: AssetManager::new(device, queue),
+            assets: AssetManager::new(),
             last_frame_time: Instant::now(),
             physics: PhysicsSimulator::default(),
             delta_time: Duration::default(),
@@ -144,5 +145,22 @@ impl World {
 
     pub fn get_delta_time(&self) -> Duration {
         self.delta_time
+    }
+}
+
+impl World {
+    pub fn initialize_runtime(&mut self, renderer: &Renderer) {
+        let world_ptr: *mut World = self;
+        unsafe {
+            for obj in self.objects.values_mut() {
+                if let Some(ref mut drawable) = obj.drawable {
+                    drawable.setup(
+                        &renderer.state.device,
+                        &renderer.state.queue,
+                        &mut *world_ptr,
+                    )
+                }
+            }
+        }
     }
 }

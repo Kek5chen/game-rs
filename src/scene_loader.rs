@@ -1,13 +1,12 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::error::Error;
-use std::f32::consts::PI;
 use std::rc::Rc;
 
 use bytemuck::Contiguous;
 use itertools::izip;
 use log::warn;
-use nalgebra::{Matrix3, Matrix4, Vector2, Vector3};
+use nalgebra::{Matrix4, Vector2, Vector3};
 use num_traits::{ToPrimitive, Zero};
 use russimp::material::{DataContent, MaterialProperty, PropertyTypeInfo, TextureType};
 use russimp::node::Node;
