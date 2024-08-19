@@ -1,8 +1,8 @@
 use nalgebra::Matrix4;
-use wgpu::{BindGroupLayout, Device, IndexFormat, Queue, RenderPass};
+use wgpu::{Device, IndexFormat, Queue, RenderPass};
 
 use crate::asset_management::materialmanager::RuntimeMaterial;
-use crate::asset_management::mesh::{Mesh, RuntimeMesh};
+use crate::asset_management::mesh::RuntimeMesh;
 use crate::asset_management::meshmanager::MeshId;
 use crate::drawable::Drawable;
 use crate::object::GameObjectId;
