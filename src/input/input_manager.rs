@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
@@ -7,17 +6,20 @@ pub type KeyState = ElementState;
 
 pub struct InputManager {
     key_states: HashMap<KeyCode, KeyState>,
-    just_updated: Vec<KeyCode>,
+    key_just_updated: Vec<KeyCode>,
     button_states: HashMap<MouseButton, ElementState>,
+    button_just_updated: Vec<MouseButton>,
     mouse_wheel_delta: f64,
 }
 
+#[allow(unused)]
 impl InputManager {
     pub fn new() -> InputManager {
         InputManager {
             key_states: HashMap::default(),
-            just_updated: Vec::new(),
+            key_just_updated: Vec::new(),
             button_states: HashMap::default(),
+            button_just_updated: Vec::new(),
             mouse_wheel_delta: 0.0,
         }
     }
@@ -27,7 +29,7 @@ impl InputManager {
             WindowEvent::KeyboardInput { event, .. } => match event.physical_key {
                 PhysicalKey::Code(code) => {
                     if !event.state.is_pressed() || self.key_states.get(&code).is_some_and(|state| !state.is_pressed()) {
-                        self.just_updated.push(code);
+                        self.key_just_updated.push(code);
                     }
                     
                     self.key_states.insert(code.clone(), event.state);
@@ -43,6 +45,9 @@ impl InputManager {
                 self.mouse_wheel_delta += y;
             }
             WindowEvent::MouseInput { button, state, .. } => {
+                if !state.is_pressed() || self.button_states.get(&button).is_some_and(|state| !state.is_pressed()) {
+                    self.button_just_updated.push(button.clone());
+                }
                 self.button_states.insert(button.clone(), state.clone());
             }
             _ => {}
@@ -54,7 +59,7 @@ impl InputManager {
     }
 
     pub fn is_key_down(&self, key_code: KeyCode) -> bool {
-        self.get_key_state(key_code) == KeyState::Pressed && self.just_updated.contains(&key_code)
+        self.get_key_state(key_code) == KeyState::Pressed && self.key_just_updated.contains(&key_code)
     }
 
     pub fn is_key_pressed(&self, key_code: KeyCode) -> bool {
@@ -62,7 +67,7 @@ impl InputManager {
     }
     
     pub fn is_key_released(&self, key_code: KeyCode) -> bool {
-        self.get_key_state(key_code) == KeyState::Released && self.just_updated.contains(&key_code)
+        self.get_key_state(key_code) == KeyState::Released && self.key_just_updated.contains(&key_code)
     }
 
     pub fn is_key_up(&self, key_code: KeyCode) -> bool {
@@ -73,7 +78,24 @@ impl InputManager {
         //World::instance().
     }
     
+    pub fn get_button_state(&self, button: MouseButton) -> ElementState {
+        *self.button_states.get(&button).unwrap_or(&ElementState::Released)
+    }
+    
+    pub fn is_button_down(&self, button: MouseButton) -> bool {
+        self.get_button_state(button) == ElementState::Pressed && self.button_just_updated.contains(&button)
+    }
+
+    pub fn is_button_pressed(&self, button: MouseButton) -> bool {
+        self.get_button_state(button) == ElementState::Pressed
+    }
+
+    pub fn is_button_released(&self, button: MouseButton) -> bool {
+        self.get_button_state(button) == ElementState::Released && self.button_just_updated.contains(&button)
+    }
+    
     pub fn next_frame(&mut self) {
-        self.just_updated.clear();
+        self.key_just_updated.clear();
+        self.button_just_updated.clear();
     }
 }

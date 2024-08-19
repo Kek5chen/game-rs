@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use log::{error, info};
-use wgpu::Queue;
-use winit::keyboard::KeyCode;
+use log::info;
 use crate::asset_management::AssetManager;
 use crate::components::{CameraComp, Component};
 use crate::input::input_manager::InputManager;
