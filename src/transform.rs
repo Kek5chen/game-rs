@@ -12,6 +12,7 @@ pub struct Transform {
     compound_mat: Affine3<f32>,
     invert_position: bool,
     owner: GameObjectId,
+    compound_pos_first: bool,
 }
 
 #[allow(dead_code)]
@@ -26,6 +27,7 @@ impl Transform {
             compound_mat: Affine3::identity(),
             invert_position: false,
             owner,
+            compound_pos_first: true,
         }
     }
 
@@ -199,13 +201,25 @@ impl Transform {
         self.scale_mat = Scale3::from(self.scale);
         self.recalculate_combined_matrix()
     }
+    
+    pub fn set_compound_pos_first(&mut self, state: bool) {
+        self.compound_pos_first = state;
+    }
 
     fn recalculate_combined_matrix(&mut self) {
-        self.compound_mat = Affine3::from_matrix_unchecked(
-            self.pos_mat.to_homogeneous()
-                * self.rot.to_homogeneous()
-                * self.scale_mat.to_homogeneous(),
-        );
+        if self.compound_pos_first {
+            self.compound_mat = Affine3::from_matrix_unchecked(
+                self.pos_mat.to_homogeneous()
+                    * self.rot.to_homogeneous()
+                    * self.scale_mat.to_homogeneous(),
+            );
+        } else {
+            self.compound_mat = Affine3::from_matrix_unchecked(
+                self.rot.to_homogeneous()
+                    * self.pos_mat.to_homogeneous()
+                    * self.scale_mat.to_homogeneous(),
+            );
+        }
     }
 
     pub fn full_matrix(&self) -> &Affine3<f32> {
