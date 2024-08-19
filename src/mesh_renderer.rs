@@ -35,13 +35,13 @@ impl Drawable for MeshRenderer {
                 .assets
                 .meshes
                 .init_runtime_mesh(self.mesh);
-            let mesh: *const Box<Mesh> = (*world)
+            let mesh = (*world)
                 .assets
                 .meshes
                 .get_raw_mesh(self.mesh)
                 .expect("Normal mesh should be set");
 
-            for (mat_id, _) in &(*mesh).material_ranges {
+            for (mat_id, _) in &mesh.material_ranges {
                 (*world).assets.materials.init_runtime_material(
                     &mut *world,
                     *mat_id,
@@ -81,7 +81,7 @@ impl Drawable for MeshRenderer {
             .get_runtime_mesh(self.mesh)
             .expect("Runtime mesh should be initialized before calling draw.");
 
-        let mesh: *const Box<Mesh> = world
+        let mesh = world
             .assets
             .meshes
             .get_raw_mesh(self.mesh)
