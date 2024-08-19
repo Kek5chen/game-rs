@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use nalgebra::Vector2;
+use num_traits::Zero;
 use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::{KeyCode, PhysicalKey};
@@ -10,8 +12,9 @@ pub struct InputManager {
     key_just_updated: Vec<KeyCode>,
     button_states: HashMap<MouseButton, ElementState>,
     button_just_updated: Vec<MouseButton>,
-    mouse_wheel_delta: f64,
-    mouse_pos: PhysicalPosition<f64>,
+    mouse_wheel_delta: f32,
+    mouse_pos: PhysicalPosition<f32>,
+    mouse_delta: Vector2<f32>,
 }
 
 #[allow(unused)]
@@ -23,7 +26,8 @@ impl InputManager {
             button_states: HashMap::default(),
             button_just_updated: Vec::new(),
             mouse_wheel_delta: 0.0,
-            mouse_pos: PhysicalPosition::default()
+            mouse_pos: PhysicalPosition::default(),
+            mouse_delta: Vector2::zero(),
         }
     }
 
@@ -40,14 +44,15 @@ impl InputManager {
                 _ => {}
             },
             WindowEvent::CursorMoved { position, .. } => {
-                self.mouse_pos = *position;
+                self.mouse_delta += Vector2::new(self.mouse_pos.x - position.x as f32, self.mouse_pos.y - position.y as f32);
+                self.mouse_pos = PhysicalPosition::new(position.x as f32, position.y as f32);;
             }
             WindowEvent::MouseWheel { delta, .. } => {
                 let y = match delta {
                     MouseScrollDelta::LineDelta(_, y) => *y as f64,
                     MouseScrollDelta::PixelDelta(pos) => pos.y,
                 };
-                self.mouse_wheel_delta += y;
+                self.mouse_wheel_delta += y as f32;
             }
             WindowEvent::MouseInput { button, state, .. } => {
                 if !state.is_pressed() || self.button_states.get(&button).is_some_and(|state| !state.is_pressed()) {
@@ -99,12 +104,17 @@ impl InputManager {
         self.get_button_state(button) == ElementState::Released && self.button_just_updated.contains(&button)
     }
     
-    pub fn get_mouse_pos(&self) -> &PhysicalPosition<f64> {
+    pub fn get_mouse_pos(&self) -> &PhysicalPosition<f32> {
         &self.mouse_pos
+    }
+    
+    pub fn get_mouse_delta(&self) -> &Vector2<f32> {
+        &self.mouse_delta
     }
     
     pub fn next_frame(&mut self) {
         self.key_just_updated.clear();
         self.button_just_updated.clear();
+        self.mouse_delta = Vector2::zero();
     }
 }
