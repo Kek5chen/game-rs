@@ -261,7 +261,7 @@ impl Renderer {
                     combined_matrix * child.transform.full_matrix().to_homogeneous(),
                 );
             }
-            for drawable in &mut child.clone().drawable {
+            if let Some(drawable) = &mut child.clone().drawable {
                 {
                     drawable.update(
                         &mut *world_ptr,
