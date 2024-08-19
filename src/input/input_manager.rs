@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
@@ -10,6 +11,7 @@ pub struct InputManager {
     button_states: HashMap<MouseButton, ElementState>,
     button_just_updated: Vec<MouseButton>,
     mouse_wheel_delta: f64,
+    mouse_pos: PhysicalPosition<f64>,
 }
 
 #[allow(unused)]
@@ -21,6 +23,7 @@ impl InputManager {
             button_states: HashMap::default(),
             button_just_updated: Vec::new(),
             mouse_wheel_delta: 0.0,
+            mouse_pos: PhysicalPosition::default()
         }
     }
 
@@ -36,7 +39,9 @@ impl InputManager {
                 }
                 _ => {}
             },
-            WindowEvent::CursorMoved { .. } => {}
+            WindowEvent::CursorMoved { position, .. } => {
+                self.mouse_pos = *position;
+            }
             WindowEvent::MouseWheel { delta, .. } => {
                 let y = match delta {
                     MouseScrollDelta::LineDelta(_, y) => *y as f64,
@@ -92,6 +97,10 @@ impl InputManager {
 
     pub fn is_button_released(&self, button: MouseButton) -> bool {
         self.get_button_state(button) == ElementState::Released && self.button_just_updated.contains(&button)
+    }
+    
+    pub fn get_mouse_pos(&self) -> &PhysicalPosition<f64> {
+        &self.mouse_pos
     }
     
     pub fn next_frame(&mut self) {
