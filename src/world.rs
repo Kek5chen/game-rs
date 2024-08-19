@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use log::info;
-use wgpu::{Device, Queue};
-
+use log::{error, info};
+use wgpu::Queue;
+use winit::keyboard::KeyCode;
 use crate::asset_management::AssetManager;
 use crate::components::{CameraComp, Component};
+use crate::input::input_manager::InputManager;
 use crate::object::{GameObject, GameObjectId};
 use crate::physics::simulator::PhysicsSimulator;
 use crate::renderer::Renderer;
@@ -21,6 +21,7 @@ pub struct World {
     pub active_camera: Option<GameObjectId>,
     pub assets: AssetManager,
     pub physics: PhysicsSimulator,
+    pub input: InputManager,
     delta_time: Duration,
     last_frame_time: Instant,
 }
@@ -36,6 +37,7 @@ impl World {
             last_frame_time: Instant::now(),
             physics: PhysicsSimulator::default(),
             delta_time: Duration::default(),
+            input: InputManager::new(),
         });
 
         // create a second mutable reference so G_WORLD can be used in (~un~)safe code
@@ -115,6 +117,7 @@ impl World {
             self.execute_component_func(Component::late_update);
             self.physics.step();
             self.execute_component_func(Component::post_update);
+            self.input.next_frame();
         }
     }
 
