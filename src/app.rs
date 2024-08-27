@@ -157,7 +157,7 @@ impl ApplicationHandler for App {
         if window_id != renderer.window().id() {
             return;
         }
-        world.input.process_event(&event);
+        world.input.process_event(&mut renderer.window_mut(), &event);
         if renderer.state.input(&event) {
            return; 
         }
