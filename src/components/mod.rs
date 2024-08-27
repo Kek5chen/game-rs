@@ -18,6 +18,7 @@ pub mod collider;
 pub mod gravity;
 pub mod rigid_body;
 pub mod rotate;
+pub mod freecam;
 
 // TODO: resolve unsafe hell
 pub trait Component: Any {
