@@ -1,4 +1,4 @@
-use nalgebra::{Affine3, Scale3, Translation3, UnitQuaternion, Vector3};
+use nalgebra::{AbstractRotation, Affine3, Scale3, Translation3, UnitQuaternion, Vector3};
 
 use crate::object::GameObjectId;
 
@@ -224,5 +224,17 @@ impl Transform {
 
     pub fn full_matrix(&self) -> &Affine3<f32> {
         &self.compound_mat
+    }
+
+    pub fn forward(&self) -> Vector3<f32> {
+        self.rot.inverse() * Vector3::new(0.0, 0.0, -1.0)
+    }
+
+    pub fn right(&self) -> Vector3<f32> {
+        self.rot.inverse() * Vector3::new(1.0, 0.0, 0.0)
+    }
+
+    pub fn up(&self) -> Vector3<f32> {
+        self.rot.inverse() * Vector3::new(0.0, 1.0, 0.0)
     }
 }
