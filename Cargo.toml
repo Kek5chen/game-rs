@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 wgpu = { version = "22.0.0", features = ["vulkan-portability"] }
 tokio = { version = "1.38.1", features = ["rt", "rt-multi-thread", "macros"] }
-winit = { version = "0.30.4", features = ["x11"] }
+winit = { version = "0.30.5", features = ["x11"] }
 env_logger = { version = "0.11.3", features = ["auto-color"] }
 bytemuck = "1.16.1"
 log = "0.4.22"
