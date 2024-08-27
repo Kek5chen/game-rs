@@ -4,6 +4,7 @@ use num_traits::Zero;
 use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::window::{CursorGrabMode, Window};
 
 pub type KeyState = ElementState;
 
@@ -14,7 +15,10 @@ pub struct InputManager {
     button_just_updated: Vec<MouseButton>,
     mouse_wheel_delta: f32,
     mouse_pos: PhysicalPosition<f32>,
-    mouse_delta: Vector2<f32>,
+    mouse_delta: Vector2<f32>, 
+    confined: bool,
+    lock_on_next_frame: bool,
+    unlock_on_next_frame: bool,
 }
 
 #[allow(unused)]
@@ -28,10 +32,21 @@ impl InputManager {
             mouse_wheel_delta: 0.0,
             mouse_pos: PhysicalPosition::default(),
             mouse_delta: Vector2::zero(),
+            confined: false,
+            lock_on_next_frame: true,
+            unlock_on_next_frame: true,
         }
     }
 
-    pub(crate) fn process_event(&mut self, window_event: &WindowEvent) {
+    pub(crate) fn process_event(&mut self, window: &mut Window, window_event: &WindowEvent) {
+        if self.lock_on_next_frame {
+            self._set_mouse_mode(window, true);
+            self.lock_on_next_frame = false;
+        } else if self.unlock_on_next_frame {
+            self._set_mouse_mode(window, false);
+            self.unlock_on_next_frame = false;
+        }
+        
         match window_event {
             WindowEvent::KeyboardInput { event, .. } => match event.physical_key {
                 PhysicalKey::Code(code) => {
@@ -45,7 +60,17 @@ impl InputManager {
             },
             WindowEvent::CursorMoved { position, .. } => {
                 self.mouse_delta += Vector2::new(self.mouse_pos.x - position.x as f32, self.mouse_pos.y - position.y as f32);
-                self.mouse_pos = PhysicalPosition::new(position.x as f32, position.y as f32);;
+                if self.confined {
+                    let size = window.inner_size();
+                    let newpos = PhysicalPosition::new(size.width as f64 / 2f64, size.height as f64 / 2f64);
+                    if newpos.x == position.x && newpos.y == position.y {
+                        return;
+                    }
+                    self.mouse_pos = PhysicalPosition::new(newpos.x as f32, newpos.y as f32);
+                    window.set_cursor_position(newpos);
+                } else {
+                    self.mouse_pos = PhysicalPosition::new(position.x as f32, position.y as f32);
+                }
             }
             WindowEvent::MouseWheel { delta, .. } => {
                 let y = match delta {
@@ -110,6 +135,27 @@ impl InputManager {
     
     pub fn get_mouse_delta(&self) -> &Vector2<f32> {
         &self.mouse_delta
+    }
+    
+    fn _set_mouse_mode(&mut self, window: &mut Window, locked: bool) {
+        if locked {
+            if window.set_cursor_grab(CursorGrabMode::Locked).is_err() {
+                window.set_cursor_grab(CursorGrabMode::Confined).unwrap();
+                self.confined = true;
+            } else {
+                window.set_cursor_grab(CursorGrabMode::None).unwrap();
+                self.confined = false;
+            }
+            window.set_cursor_visible(!locked);
+        }
+    }
+    
+    pub fn set_mouse_mode(&mut self, locked: bool) {
+        if locked {
+            self.lock_on_next_frame = true;
+        } else {
+            self.unlock_on_next_frame = true;
+        }
     }
     
     pub fn next_frame(&mut self) {
