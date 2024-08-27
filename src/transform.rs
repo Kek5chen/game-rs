@@ -201,7 +201,7 @@ impl Transform {
         self.scale_mat = Scale3::from(self.scale);
         self.recalculate_combined_matrix()
     }
-    
+
     pub fn set_compound_pos_first(&mut self, state: bool) {
         self.compound_pos_first = state;
     }
