@@ -287,4 +287,8 @@ impl Renderer {
     pub fn window(&self) -> &Window {
         &self.window
     }
+    
+    pub fn window_mut(&mut self) -> &mut Window {
+        &mut self.window
+    }
 }
