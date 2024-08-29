@@ -33,6 +33,7 @@ mod state;
 mod transform;
 mod world;
 mod utils;
+mod input;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
