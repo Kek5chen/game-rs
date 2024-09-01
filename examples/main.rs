@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .init();
 
     let mut app = App::create("game-rs", 800, 600);
-    app.with_init(Some(funnyinit));
+    app.with_init(Some(init));
     app.with_update(Some(update));
     
     if let Err(e) = app.run().await {
@@ -40,12 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn init(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> {
-    let obj2 = SceneLoader::load(world, "testmodels/parenting_and_object_types.fbx")?;
-    // I know that the following code is broken regularly. And I have an explanation for this:
-    // I never update the example because I make more sophisticated examples to test.
-    // And I'm too lazy to delete my code, update the example, and then put my test code back.
-    // Maybe some time in the future I'll actually split this into a library. But for now,
-    // have some broken code :)
+    let mut obj2 = SceneLoader::load(world, "testmodels/parenting_and_object_types.fbx")?;
     let mut obj1 = world.new_object("Mow");
     let mut camera = world.new_camera();
 
