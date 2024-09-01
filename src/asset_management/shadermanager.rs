@@ -6,16 +6,7 @@ use std::mem::size_of;
 use std::path::Path;
 use std::rc::Rc;
 
-use wgpu::{
-    BindGroupLayout
-    , ColorTargetState, ColorWrites, CompareFunction, DepthBiasState,
-    DepthStencilState, Device, FragmentState, MultisampleState, PipelineCompilationOptions,
-    PipelineLayout, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline,
-    RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor,
-    ShaderSource, StencilState, TextureFormat
-    , VertexAttribute, VertexBufferLayout, VertexFormat, VertexState,
-    VertexStepMode,
-};
+use wgpu::{BindGroupLayout, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState, Device, Face, FragmentState, FrontFace, MultisampleState, PipelineCompilationOptions, PipelineLayout, PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, StencilState, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
 
 use crate::asset_management::assetmanager::DefaultGPUObjects;
 use crate::asset_management::mesh::Vertex3D;
@@ -107,7 +98,15 @@ impl Shader {
                     array_stride: size_of::<Vertex3D>() as u64,
                 }], // TODO: Make this cleaner
             },
-            primitive: PrimitiveState::default(),
+            primitive: PrimitiveState {
+                topology: PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: FrontFace::Ccw,
+                cull_mode: Some(Face::Back),
+                unclipped_depth: false,
+                polygon_mode: PolygonMode::Fill,
+                conservative: false,
+            },
             depth_stencil: Some(DepthStencilState {
                 format: TextureFormat::Depth32Float,
                 depth_write_enabled: true,

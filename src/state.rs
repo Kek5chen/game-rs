@@ -1,13 +1,5 @@
 use std::rc::Rc;
-use wgpu::{
-    Adapter
-
-    , Device, DeviceDescriptor, Extent3d, Instance
-    , PowerPreference, Queue,
-    RequestAdapterOptions, Surface, SurfaceConfiguration,
-    Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages
-    ,
-};
+use wgpu::{Adapter, Device, DeviceDescriptor, Extent3d, Features, Instance, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
@@ -54,7 +46,12 @@ impl State {
 
     async fn get_device_and_queue(adapter: &Adapter) -> (Rc<Device>, Rc<Queue>) {
         let (device, queue) = adapter
-            .request_device(&DeviceDescriptor::default(), None)
+            .request_device(&DeviceDescriptor {
+                label: Some("Renderer Hardware"),
+                required_features: Features::default(),
+                required_limits: Default::default(),
+                memory_hints: Default::default(),
+            }, None)
             .await
             .unwrap();
         (Rc::new(device), Rc::new(queue))
