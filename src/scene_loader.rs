@@ -28,7 +28,7 @@ pub struct SceneLoader;
 
 #[allow(dead_code)]
 impl SceneLoader {
-    pub(crate) fn load(world: &mut World, path: &str) -> Result<GameObjectId, Box<dyn Error>> {
+    pub fn load(world: &mut World, path: &str) -> Result<GameObjectId, Box<dyn Error>> {
         let mut scene = Scene::from_file(
             path,
             vec![

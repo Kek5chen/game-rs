@@ -6,7 +6,7 @@ use wgpu::{Device, Queue, RenderPass};
 use crate::object::GameObjectId;
 use crate::world::World;
 
-pub(crate) trait Drawable: Any {
+pub trait Drawable: Any {
     fn setup(
         &mut self,
         device: &Device,

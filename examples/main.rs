@@ -8,32 +8,16 @@ use log::{error, LevelFilter};
 use nalgebra::Vector3;
 use winit::window::Window;
 
-use crate::app::App;
-use crate::asset_management::mesh::Mesh;
-use crate::buffer::{CUBE, CUBE_INDICES};
-use crate::components::RotateComponent;
-use crate::logichooks::LogicHooks;
-use crate::mesh_renderer::MeshRenderer;
-use crate::scene_loader::SceneLoader;
-use crate::world::World;
+use gamers::app::App;
+use gamers::asset_management::mesh::Mesh;
+use gamers::buffer::{CUBE, CUBE_INDICES};
+use gamers::components::freecam::FreecamController;
+use gamers::components::RotateComponent;
+use gamers::logichooks::LogicHooks;
+use gamers::mesh_renderer::MeshRenderer;
+use gamers::scene_loader::SceneLoader;
+use gamers::world::World;
 
-mod app;
-mod asset_management;
-mod buffer;
-mod components;
-mod drawable;
-mod hacks;
-mod logichooks;
-mod mesh_renderer;
-mod object;
-mod physics;
-mod renderer;
-mod scene_loader;
-mod state;
-mod transform;
-mod world;
-mod utils;
-mod input;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
