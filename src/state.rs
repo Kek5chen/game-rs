@@ -4,6 +4,7 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+#[allow(unused)]
 pub struct State {
     pub(crate) instance: Instance,
     pub(crate) surface: Surface<'static>,

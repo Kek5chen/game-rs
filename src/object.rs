@@ -17,6 +17,7 @@ use crate::world::World;
 #[repr(transparent)]
 pub struct GameObjectId(pub usize);
 
+#[allow(dead_code)]
 impl GameObjectId {
     pub(crate) fn exists(&self) -> bool {
         World::instance().objects.contains_key(self)
@@ -92,7 +93,7 @@ impl GameObject {
             if type_id == TypeId::of::<C>() {
                 return Some(unsafe {
                     let rc_clone = Rc::clone(component);
-                    std::mem::transmute(rc_clone)
+                    mem::transmute(rc_clone)
                 });
             }
         }

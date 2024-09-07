@@ -1,4 +1,4 @@
-use nalgebra::{AbstractRotation, Affine3, Scale3, Translation3, UnitQuaternion, Vector3};
+use nalgebra::{Affine3, Scale3, Translation3, UnitQuaternion, Vector3};
 
 use crate::object::GameObjectId;
 

@@ -26,7 +26,7 @@ impl Drawable for MeshRenderer {
     fn setup(
         &mut self,
         _device: &Device,
-        queue: &Queue,
+        _queue: &Queue,
         world: &mut World,
     ) {
         unsafe {

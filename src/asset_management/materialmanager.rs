@@ -42,7 +42,7 @@ impl Material {
         &self,
         world: &mut World,
         device: &Device,
-        queue: &Queue,
+        _queue: &Queue,
         material_uniform_bind_group_layout: &BindGroupLayout,
     ) -> RuntimeMaterial {
         let data = RuntimeMaterialData {

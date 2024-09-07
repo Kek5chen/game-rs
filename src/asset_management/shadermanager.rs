@@ -140,7 +140,7 @@ impl Shader {
 #[allow(dead_code)]
 impl ShaderManager {
     pub fn init(&mut self) {
-        let device = self.device.as_ref().unwrap().as_ref();
+        
     }
 
     pub fn new() -> ShaderManager {
