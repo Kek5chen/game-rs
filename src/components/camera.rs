@@ -67,9 +67,9 @@ impl CameraData {
         self.pos = cam_transform.position();
         self.rot = cam_transform.rotation().euler_vector_deg();
         self.scale = cam_transform.scale();
-        self.view_mat = *cam_transform.full_matrix();
+        self.view_mat = cam_transform.get_global_transform_matrix_ext(true).inverse();
         self.projection_mat = proj_matrix.to_homogeneous();
-        self.proj_view_mat = self.projection_mat * cam_transform.full_matrix().to_homogeneous();
+        self.proj_view_mat = self.projection_mat * self.view_mat.to_homogeneous();
     }
 }
 
