@@ -68,9 +68,9 @@ impl Collider3D {
 
     fn default_collider(shape: SharedShape) -> Collider {
         ColliderBuilder::new(shape)
-        .density(1.0)
-        .restitution(1.0)
-        .build()
+            .density(1.0)
+            .friction(0.999)
+            .build()
     }
 
     pub fn link_to_rigid_body(&mut self, h_body: Option<RigidBodyHandle>) {
