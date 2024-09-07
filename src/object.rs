@@ -5,6 +5,7 @@ use std::ops::{AddAssign, Deref, DerefMut};
 use std::rc::Rc;
 
 use bytemuck::{Pod, Zeroable};
+use itertools::Itertools;
 use nalgebra::Matrix4;
 
 use crate::components::Component;
