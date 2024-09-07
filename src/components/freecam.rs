@@ -33,8 +33,8 @@ impl Component for FreecamController {
 		let input = &World::instance().input;
 
 		let mouse_delta = input.get_mouse_delta(); 
-		self.yaw -= mouse_delta.x * self.look_sensitivity / 50.0;
-		self.pitch -= mouse_delta.y * self.look_sensitivity / 50.0;
+		self.yaw += mouse_delta.x * self.look_sensitivity * delta_time;
+		self.pitch += mouse_delta.y * self.look_sensitivity * delta_time;
 
 		self.pitch = self.pitch.clamp(-89.0f32, 89.0f32);
 
