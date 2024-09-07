@@ -10,6 +10,8 @@ pub use gravity::GravityComp;
 pub use rigid_body::RigidBodyComponent;
 #[allow(unused_imports)]
 pub use rotate::RotateComponent;
+#[allow(unused_imports)]
+pub use freecam::FreecamController;
 
 use crate::object::GameObjectId;
 

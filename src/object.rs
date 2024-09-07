@@ -56,7 +56,14 @@ pub struct GameObject {
 
 impl GameObject {
     pub fn add_child(&mut self, mut child: GameObjectId) {
-        // TODO: Make the children know who it's owned by because of circling references
+        // if child had a parent, remove it from there
+        if let Some(mut parent) = child.parent {
+            let pos_opt = parent.children.iter().find_position(|other| child.0 == other.0).map(|(id, _)| id);
+            if let Some(pos) = pos_opt {
+                parent.children.remove(pos);
+            }
+        }
+
         self.children.push(child);
         child.parent = Some(self.id);
     }
