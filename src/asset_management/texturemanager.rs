@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use wgpu::{
-    Device, Extent3d, Queue, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension,
-    TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension,
-};
+use wgpu::{AddressMode, Device, Extent3d, Queue, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension};
 use wgpu::util::{DeviceExt, TextureDataOrder};
 use crate::asset_management::assetmanager::DefaultGPUObjects;
 
@@ -189,7 +186,20 @@ impl Texture {
             base_array_layer: 0,
             array_layer_count: None,
         });
-        let sampler = device.create_sampler(&SamplerDescriptor::default());
+        let sampler = device.create_sampler(&SamplerDescriptor {
+            label: None,
+            address_mode_u: AddressMode::Repeat,
+            address_mode_v: AddressMode::Repeat,
+            address_mode_w: AddressMode::Repeat,
+            mag_filter: Default::default(),
+            min_filter: Default::default(),
+            mipmap_filter: Default::default(),
+            lod_min_clamp: 0.0,
+            lod_max_clamp: 32.0,
+            compare: None,
+            anisotropy_clamp: 1,
+            border_color: None,
+        });
         let run_texture = RuntimeTexture {
             texture: gpu_tex,
             view,
