@@ -86,10 +86,6 @@ impl Transform {
         global_rotation
     }
 
-    pub fn get_global_rotation(&self) -> UnitQuaternion<f32> {
-        self.get_global_rotation_ext(true)
-    }
-
     pub fn get_global_scale_matrix_ext(&self, include_self: bool) -> Scale3<f32> {
         let mut mat = Scale3::identity();
         let mut parents = self.get_parent_list();
@@ -143,7 +139,7 @@ impl Transform {
     }
 
     pub fn rotation(&self) -> UnitQuaternion<f32> {
-        self.get_global_rotation()
+        self.get_global_rotation_ext(true)
     }
 
     pub fn rotate(&mut self, rot: UnitQuaternion<f32>) {
