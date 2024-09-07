@@ -223,14 +223,14 @@ impl Transform {
     }
 
     pub fn forward(&self) -> Vector3<f32> {
-        self.rot.inverse() * Vector3::new(0.0, 0.0, -1.0)
+        self.rot * Vector3::new(0.0, 0.0, -1.0)
     }
 
     pub fn right(&self) -> Vector3<f32> {
-        self.rot.inverse() * Vector3::new(1.0, 0.0, 0.0)
+        self.rot * Vector3::new(1.0, 0.0, 0.0)
     }
 
     pub fn up(&self) -> Vector3<f32> {
-        self.rot.inverse() * Vector3::new(0.0, 1.0, 0.0)
+        self.rot * Vector3::new(0.0, 1.0, 0.0)
     }
 }
