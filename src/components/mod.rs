@@ -36,7 +36,7 @@ pub trait Component: Any {
     
     // Gets called when the component should update any state that's necessary for physics
     unsafe fn late_update(&mut self) {}
-    
+
     // Gets called after physics have evolved
     unsafe fn post_update(&mut self) {}
 
