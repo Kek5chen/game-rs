@@ -16,6 +16,7 @@ pub struct PlayerMovement {
 	damping_factor: f32,
 	rigid_body: Option<Rc<RefCell<Box<RigidBodyComponent>>>>,
 	velocity: Vector3<f32>,
+	sprint_multiplier: f32,
 }
 
 impl Component for PlayerMovement {
@@ -29,7 +30,8 @@ impl Component for PlayerMovement {
 			damping_factor: 2.0,
 			jump_factor: 1.5,
 			rigid_body: None,
-			velocity: Vector3::zero()
+			velocity: Vector3::zero(),
+			sprint_multiplier: 2.0,
 		}
 	}
 
