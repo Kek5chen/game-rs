@@ -114,11 +114,13 @@ impl World {
         unsafe {
             self.execute_component_func(Component::update);
             self.execute_component_func(Component::late_update);
-            if self.physics.last_update.elapsed() > self.physics.timestep {
-                self.physics.last_update = Instant::now();
+            
+            while self.physics.last_update.elapsed() > self.physics.timestep {
+                self.physics.last_update += self.physics.timestep;
                 self.physics.step();
                 self.execute_component_func(Component::post_update);
             }
+            
             self.input.next_frame();
         }
     }
