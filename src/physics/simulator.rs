@@ -1,3 +1,4 @@
+use std::time::{Duration, Instant};
 use nalgebra::Vector3;
 use rapier3d::prelude::*;
 
@@ -16,6 +17,8 @@ pub struct PhysicsSimulator {
     pub query_pipeline: QueryPipeline,
     pub physics_hooks: (),
     pub event_handler: (),
+    pub last_update: Instant,
+    pub timestep: Duration,
 }
 
 const EARTH_GRAVITY: f32 = 9.81;
@@ -37,6 +40,8 @@ impl Default for PhysicsSimulator {
             query_pipeline: QueryPipeline::default(),
             physics_hooks: (),
             event_handler: (),
+            last_update: Instant::now(),
+            timestep: Duration::from_millis(1000 / 60),
         }
     }
 }
