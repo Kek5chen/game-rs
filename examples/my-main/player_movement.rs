@@ -75,25 +75,32 @@ impl Component for PlayerMovement {
 
 		let mut factor = self.move_speed;
 
+		if world.input.is_key_pressed(KeyCode::ShiftLeft) {
+			factor *= self.sprint_multiplier;
+		}
+		
+		let mut base_vel = Vector3::zero();
+
 		if world.input.is_key_pressed(KeyCode::KeyW) {
-			self.velocity += self.parent.transform.forward() * factor;
+			base_vel += self.parent.transform.forward();
 		}
 
 		if world.input.is_key_pressed(KeyCode::KeyS) {
-			self.velocity += -self.parent.transform.forward() * factor;
+			base_vel -= self.parent.transform.forward();
 		}
 
 		if world.input.is_key_pressed(KeyCode::KeyA) {
-			self.velocity += -self.parent.transform.right() * factor;
+			base_vel -= self.parent.transform.right();
 		}
 
 		if world.input.is_key_pressed(KeyCode::KeyD) {
-			self.velocity += self.parent.transform.right() * factor;
+			base_vel += self.parent.transform.right();
 		}
 		
-		if world.input.is_key_pressed(KeyCode::ShiftLeft) {
-			self.velocity = Vector3::zero();
+		if base_vel.magnitude() > 0.5 {
+			base_vel = base_vel.normalize();
 		}
+		self.velocity += base_vel * factor;
 		
 		let mut linvel = body.linvel().clone();
 		linvel.x = self.velocity.x;
