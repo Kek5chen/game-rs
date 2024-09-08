@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 fn funnyinit(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> {
     let mut city = SceneLoader::load(world, "./testmodels/GM Big City/gm_bigcity.obj")?;
 
-    for mut child in &mut city.children {
+    for child in &mut city.children {
         let collider = child.add_component::<Collider3D>();
         let drawable = &child.drawable;
         let renderer = match
@@ -81,7 +81,7 @@ fn funnyinit(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> 
     let collider = char_controller.add_component::<Collider3D>();
     collider.get_collider_mut().unwrap().set_shape(SharedShape::capsule_y(1.0, 0.25));
 
-    let rigid_body = char_controller.add_component::<RigidBodyComponent>();
+    let _rigid_body = char_controller.add_component::<RigidBodyComponent>();
     char_controller.add_component::<PlayerMovement>();
 
     world.print_objects();

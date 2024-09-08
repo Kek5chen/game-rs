@@ -65,7 +65,6 @@ impl Component for PlayerMovement {
 		};
 
 		let world= World::instance();
-		let delta_time = world.get_delta_time().as_secs_f32();
 		
 		self.velocity /= self.damping_factor;
 
