@@ -73,7 +73,7 @@ impl Component for PlayerMovement {
 			body.apply_impulse(vector![0.0, 0.2 * self.jump_factor, 0.0], true);
 		}
 
-		let factor = self.move_speed * delta_time;
+		let mut factor = self.move_speed;
 
 		if world.input.is_key_pressed(KeyCode::KeyW) {
 			self.velocity += self.parent.transform.forward() * factor;
