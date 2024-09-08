@@ -23,3 +23,6 @@ futures = "0.3.30"
 
 [build-dependencies]
 chrono = "0.4.38"
+
+[profile.dev]
+opt-level = 2
