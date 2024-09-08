@@ -39,7 +39,7 @@ impl Component for PlayerMovement {
 			if let Some(rigid) = rigid
 				.borrow_mut()
 				.get_body_mut()	{
-				rigid.set_locked_axes(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z, false)
+				rigid.set_locked_axes(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Y | LockedAxes::ROTATION_LOCKED_Z, false)
 			}
 		}
 		self.rigid_body = rigid;
