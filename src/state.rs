@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use wgpu::{Adapter, Device, DeviceDescriptor, Extent3d, Features, Instance, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
+use wgpu::{Adapter, CompositeAlphaMode, Device, DeviceDescriptor, Extent3d, Features, Instance, PowerPreference, PresentMode, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
@@ -64,9 +64,17 @@ impl State {
         adapter: &Adapter,
         device: &Device,
     ) -> SurfaceConfiguration {
-        let config = surface
-            .get_default_config(adapter, size.width, size.height)
-            .unwrap();
+        let caps = surface.get_capabilities(adapter);
+        let config = SurfaceConfiguration {
+            usage: TextureUsages::RENDER_ATTACHMENT,
+            format: *caps.formats.first().unwrap(),
+            width: size.width,
+            height: size.height,
+            desired_maximum_frame_latency: 2,
+            present_mode: PresentMode::Immediate,
+            alpha_mode: CompositeAlphaMode::Auto,
+            view_formats: vec![],
+        };
         surface.configure(device, &config);
         config
     }
