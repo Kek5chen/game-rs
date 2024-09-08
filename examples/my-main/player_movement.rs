@@ -26,9 +26,9 @@ impl Component for PlayerMovement {
 	{
 		PlayerMovement {
 			parent,
-			move_speed: 300.0,
+			move_speed: 2.0,
 			damping_factor: 2.0,
-			jump_factor: 1.5,
+			jump_factor: 10.0,
 			rigid_body: None,
 			velocity: Vector3::zero(),
 			sprint_multiplier: 2.0,
