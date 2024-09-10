@@ -233,4 +233,16 @@ impl Transform {
     pub fn up(&self) -> Vector3<f32> {
         self.rotation() * Vector3::new(0.0, 1.0, 0.0)
     }
+
+    pub fn local_forward(&self) -> Vector3<f32> {
+        self.local_rotation() * Vector3::new(0.0, 0.0, -1.0)
+    }
+
+    pub fn local_right(&self) -> Vector3<f32> {
+        self.local_rotation() * Vector3::new(1.0, 0.0, 0.0)
+    }
+
+    pub fn local_up(&self) -> Vector3<f32> {
+        self.local_rotation() * Vector3::new(0.0, 1.0, 0.0)
+    }
 }
