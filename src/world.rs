@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-
-use log::info;
 use crate::asset_management::AssetManager;
 use crate::components::{CameraComp, Component};
 use crate::input::input_manager::InputManager;
@@ -99,7 +97,12 @@ impl World {
     }
 
     unsafe fn execute_component_func(&mut self, func: unsafe fn(&mut dyn Component)) {
-        for object in self.objects.values() {
+        for (id, object) in &self.objects {
+            // just a big hack
+            // TODO!!!!: FIND OUT WHY IDS GO CRAZY
+            if id >= &self.next_object_id {
+                return;
+            }
             let object_ptr = object;
             for comp in &object_ptr.components {
                 let comp_ptr = comp.as_ptr();
