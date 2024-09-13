@@ -42,10 +42,10 @@ impl Drawable for MeshRenderer {
                 .expect("Normal mesh should be set");
 
             for (mat_id, _) in &mesh.material_ranges {
-                (*world).assets.materials.init_runtime_material(
+                (*world).assets.materials.init_runtime_material_id(
                     &mut *world,
                     *mat_id,
-                );
+                ).expect("Runtime material should be initialized..");
             }
         }
     }

@@ -148,6 +148,14 @@ pub struct MaterialManager {
     default_gpu_objects: Option<Rc<DefaultGPUObjects>>,
 }
 
+#[derive(Debug)]
+pub enum MaterialError {
+    MaterialNotFound,
+    DeviceNotInitialized,
+    QueueNotInitialized,
+    DefaultGpuObjectsNotInitialized,
+}
+
 #[allow(dead_code)]
 impl MaterialManager {
     pub fn new() -> MaterialManager {
@@ -222,12 +230,13 @@ impl MaterialManager {
 
     pub fn get_runtime_material(&mut self, id: MaterialId) -> Option<&RuntimeMaterial> {
         let mat = self.materials.get_mut(&id)?;
+
         if mat.runtime.is_none() {
             mat.runtime = Some(mat.raw.init_runtime(
                 World::instance(),
-                self.device.as_ref().unwrap().as_ref(),
-                self.queue.as_ref().unwrap().as_ref(),
-                &self.default_gpu_objects.as_ref().unwrap().material_uniform_bind_group_layout
+                self.device.as_ref()?.as_ref(),
+                self.queue.as_ref()?.as_ref(),
+                &self.default_gpu_objects.as_ref()?.material_uniform_bind_group_layout
             ));
         }
         mat.runtime.as_ref()
@@ -237,32 +246,44 @@ impl MaterialManager {
         let mat = self.materials.get_mut(&id)?;
         mat.runtime.as_mut()
     }
-
-    pub fn init_runtime_material(&mut self, world: &mut World, id: MaterialId) {
-        self.get_runtime_material_or_init(world, id);
+    
+    fn init_runtime_material_internal(
+        world: &mut World,
+        material: &mut MaterialItem,
+        device: &Device,
+        queue: &Queue,
+        default_gpu_objects: &DefaultGPUObjects,
+    ) -> Result<(), MaterialError> {
+        material.runtime = Some(material.raw.init_runtime(
+            world,
+            device,
+            queue,
+            &default_gpu_objects.material_uniform_bind_group_layout,
+        ));
+        Ok(())
     }
 
-    pub fn get_runtime_material_or_init(
-        &mut self,
-        world: &mut World,
-        id: MaterialId,
-    ) -> Option<&RuntimeMaterial> {
-        let material = self.materials.get_mut(&id)?;
-        if material.runtime.is_some() {
-            return material.runtime.as_ref();
-        }
-
-        let runtime_material = material.raw.init_runtime(
-            world,
-            self.device.as_ref().unwrap().as_ref(),
-            self.queue.as_ref().unwrap().as_ref(),
-            &self
-                .default_gpu_objects
-                .as_ref()
-                .unwrap()
-                .material_uniform_bind_group_layout,
-        );
-        material.runtime = Some(runtime_material);
-        material.runtime.as_ref()
+    pub fn init_runtime_material(&self, world: &mut World, material: &mut MaterialItem) -> Result<(), MaterialError> {
+        let device = self.device.as_ref()
+            .ok_or(MaterialError::DeviceNotInitialized)?;
+        let queue = self.queue.as_ref()
+            .ok_or(MaterialError::QueueNotInitialized)?;
+        let default_gpu_objects = self.default_gpu_objects.as_ref()
+            .ok_or(MaterialError::DefaultGpuObjectsNotInitialized)?;
+        
+        Self::init_runtime_material_internal(world, material, device, queue, default_gpu_objects)
+    }
+    
+    pub fn init_runtime_material_id(&mut self, world: &mut World, id: MaterialId) -> Result<(), MaterialError> {
+        let material = self.materials.get_mut(&id)
+            .ok_or(MaterialError::MaterialNotFound)?;
+        let device = self.device.as_ref()
+            .ok_or(MaterialError::DeviceNotInitialized)?;
+        let queue = self.queue.as_ref()
+            .ok_or(MaterialError::QueueNotInitialized)?;
+        let default_gpu_objects = self.default_gpu_objects.as_ref()
+            .ok_or(MaterialError::DefaultGpuObjectsNotInitialized)?;
+        
+        Self::init_runtime_material_internal(world, material, device, queue, default_gpu_objects)
     }
 }
