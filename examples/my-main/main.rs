@@ -15,7 +15,7 @@ use winit::window::Window;
 use gamers::app::App;
 use gamers::components::{Collider3D, RigidBodyComponent};
 use gamers::components::collider::MeshShapeExtra;
-use gamers::mesh_renderer::MeshRenderer;
+use gamers::drawables::mesh_renderer::MeshRenderer;
 use gamers::scene_loader::SceneLoader;
 use gamers::world::World;
 use crate::camera_controller::CameraController;

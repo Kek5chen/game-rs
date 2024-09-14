@@ -9,7 +9,7 @@ use itertools::Itertools;
 use nalgebra::Matrix4;
 
 use crate::components::Component;
-use crate::drawable::Drawable;
+use crate::drawables::drawable::Drawable;
 use crate::hacks;
 use crate::transform::Transform;
 use crate::world::World;

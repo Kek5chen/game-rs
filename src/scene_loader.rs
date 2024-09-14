@@ -18,7 +18,7 @@ use crate::asset_management::materialmanager::{Material, MaterialId};
 use crate::asset_management::mesh::{Mesh, Vertex3D};
 use crate::asset_management::shadermanager::ShaderId;
 use crate::asset_management::texturemanager::TextureId;
-use crate::mesh_renderer::MeshRenderer;
+use crate::drawables::mesh_renderer::MeshRenderer;
 use crate::object::GameObjectId;
 use crate::utils::math::ExtraMatrixMath;
 use crate::world::World;

@@ -14,7 +14,7 @@ use gamers::buffer::{CUBE, CUBE_INDICES};
 use gamers::components::freecam::FreecamController;
 use gamers::components::RotateComponent;
 use gamers::logichooks::LogicHooks;
-use gamers::mesh_renderer::MeshRenderer;
+use gamers::drawables::mesh_renderer::MeshRenderer;
 use gamers::scene_loader::SceneLoader;
 use gamers::world::World;
 
