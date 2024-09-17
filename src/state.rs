@@ -20,6 +20,7 @@ impl State {
         let instance = Instance::default();
         instance
     }
+    
     fn setup_surface(instance: &Instance, window: &Window) -> Surface<'static> {
         let surface = unsafe {
             // We are creating a 'static lifetime out of a local reference
@@ -65,13 +66,22 @@ impl State {
         device: &Device,
     ) -> SurfaceConfiguration {
         let caps = surface.get_capabilities(adapter);
+        
+        let present_mode = if caps.present_modes.contains(&PresentMode::Mailbox) {
+            PresentMode::Mailbox
+        } else if caps.present_modes.contains(&PresentMode::Immediate) {
+            PresentMode::Immediate
+        } else {
+            caps.present_modes.first().unwrap().clone()
+        };
+        
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
             format: *caps.formats.first().unwrap(),
             width: size.width,
             height: size.height,
             desired_maximum_frame_latency: 2,
-            present_mode: PresentMode::Immediate,
+            present_mode,
             alpha_mode: CompositeAlphaMode::Auto,
             view_formats: vec![],
         };
