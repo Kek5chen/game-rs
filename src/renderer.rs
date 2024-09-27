@@ -3,17 +3,17 @@ use std::rc::Rc;
 
 use log::{debug, error};
 use nalgebra::{Matrix4, Perspective3};
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, Buffer, BufferUsages, Color,
     CommandEncoder, CommandEncoderDescriptor, LoadOp, Operations, RenderPass,
     RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp,
     SurfaceError, SurfaceTexture, TextureView, TextureViewDescriptor,
 };
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::window::Window;
 
 use crate::asset_management::assetmanager::DefaultGPUObjects;
-use crate::asset_management::shadermanager::{FALLBACK_SHADER_ID, ShaderId};
+use crate::asset_management::shadermanager::{ShaderId, FALLBACK_SHADER_ID};
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
 use crate::object::GameObjectId;
@@ -127,7 +127,12 @@ impl Renderer {
     }
 
     fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> {
-        let output = self.state.surface.get_current_texture()?;
+        let mut output = self.state.surface.get_current_texture()?;
+        if output.suboptimal {
+            self.state.recreate_surface();
+            output = self.state.surface.get_current_texture()?;
+        }
+        
         let color_view = output
             .texture
             .create_view(&TextureViewDescriptor::default());
@@ -263,12 +268,7 @@ impl Renderer {
             }
             if let Some(drawable) = &mut child.clone().drawable {
                 {
-                    drawable.update(
-                        &mut *world_ptr,
-                        *child,
-                        &self.state.queue,
-                        &combined_matrix,
-                    );
+                    drawable.update(&mut *world_ptr, *child, &self.state.queue, &combined_matrix);
                 }
                 {
                     let rpass_ptr: *mut RenderPass = rpass;
@@ -287,7 +287,7 @@ impl Renderer {
     pub fn window(&self) -> &Window {
         &self.window
     }
-    
+
     pub fn window_mut(&mut self) -> &mut Window {
         &mut self.window
     }
