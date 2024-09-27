@@ -20,7 +20,7 @@ pub struct RawTexture {
     pub width: u32,
     pub height: u32,
     pub format: TextureFormat,
-    pub data: Vec<u8>,
+    pub data: Option<Vec<u8>>,
 }
 
 pub struct Texture {
@@ -70,14 +70,14 @@ impl TextureManager {
             FALLBACK_SIZE,
             FALLBACK_SIZE,
             TextureFormat::Bgra8UnormSrgb,
-            Self::generate_new_fallback_diffuse_texture(FALLBACK_SIZE, FALLBACK_SIZE),
+            Some(Self::generate_new_fallback_diffuse_texture(FALLBACK_SIZE, FALLBACK_SIZE)),
         );
         assert_eq!(id, FALLBACK_DIFFUSE_TEXTURE);
 
-        let id = manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, vec![0, 0, 0, 0]);
+        let id = manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, Some(vec![0, 0, 0, 0]));
         assert_eq!(id, FALLBACK_NORMAL_TEXTURE);
 
-        let id = manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, vec![0, 0, 0, 0]);
+        let id = manager.add_texture(1, 1, TextureFormat::Bgra8UnormSrgb, Some(vec![0, 0, 0, 0]));
         assert_eq!(id, FALLBACK_SHININESS_TEXTURE);
 
         manager
@@ -103,7 +103,7 @@ impl TextureManager {
         width: u32,
         height: u32,
         format: TextureFormat,
-        data: Vec<u8>,
+        data: Option<Vec<u8>>,
     ) -> TextureId {
         let raw = RawTexture {
             width,
@@ -157,25 +157,10 @@ impl Texture {
         }
         let raw = &self.raw;
 
-        let gpu_tex = device.create_texture_with_data(
-            queue,
-            &TextureDescriptor {
-                label: Some("Texture"),
-                size: Extent3d {
-                    width: raw.width,
-                    height: raw.height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: TextureDimension::D2,
-                format: raw.format,
-                usage: TextureUsages::TEXTURE_BINDING,
-                view_formats: &[TextureFormat::Bgra8UnormSrgb],
-            },
-            TextureDataOrder::LayerMajor,
-            raw.data.as_slice(),
-        );
+        let gpu_tex = match self.raw.data {
+            None => self.initialize_empty_texture(device, queue, raw),
+            Some(_) => self.initialize_preset_texture(device, queue, raw),
+        };
         let view = gpu_tex.create_view(&TextureViewDescriptor {
             label: Some("Texture View"),
             format: Some(TextureFormat::Bgra8UnormSrgb),
@@ -208,5 +193,37 @@ impl Texture {
 
         self.runtime = Some(run_texture);
         self.runtime.as_ref().unwrap()
+    }
+    
+    fn initialize_texture_descriptor(&self, raw: &RawTexture) -> TextureDescriptor{
+        TextureDescriptor {
+            label: Some("Texture"),
+            size: Extent3d {
+                width: raw.width,
+                height: raw.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: raw.format,
+            usage: TextureUsages::TEXTURE_BINDING,
+            view_formats: &[TextureFormat::Bgra8UnormSrgb],
+        }
+    }
+    
+    fn initialize_preset_texture(&self, device: &Device, queue: &Queue, raw: &RawTexture) -> wgpu::Texture {
+        device.create_texture_with_data(
+            queue,
+            &self.initialize_texture_descriptor(raw),
+            TextureDataOrder::LayerMajor,
+            raw.data.as_ref().expect("Data should be set."),
+        )
+    }
+    
+    fn initialize_empty_texture(&self, device: &Device, queue: &Queue, raw: &RawTexture) -> wgpu::Texture {
+        device.create_texture(
+            &self.initialize_texture_descriptor(raw),
+        )
     }
 }

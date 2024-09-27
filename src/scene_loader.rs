@@ -267,7 +267,7 @@ impl SceneLoader {
                     rgba.width(),
                     rgba.height(),
                     TextureFormat::Bgra8UnormSrgb,
-                    data,
+                    Some(data),
                 )
             }
         }
