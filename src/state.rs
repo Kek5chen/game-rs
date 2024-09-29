@@ -139,6 +139,9 @@ impl State {
         self.size = new_size;
         self.config.width = new_size.width;
         self.config.height = new_size.height;
+    }
+
+    pub fn recreate_surface(&mut self) {
         self.surface.configure(&self.device, &self.config);
         self.depth_texture = Self::setup_depth_texture(&self.size, &self.device);
     }
