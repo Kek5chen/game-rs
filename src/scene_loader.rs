@@ -251,9 +251,11 @@ impl SceneLoader {
             DataContent::Bytes(data) => {
                 let decoded = match image::load_from_memory(data) {
                     Ok(decoded) => decoded,
-                    Err(_) => return FALLBACK_DIFFUSE_TEXTURE,
-                };
-                let rgba = decoded.into_rgba8();
+                    Err(e) => {
+                        warn!("Failed to load texture: {}. Using fallback texture.", e);
+                        return FALLBACK_DIFFUSE_TEXTURE;
+                    }
+                };                let rgba = decoded.into_rgba8();
                 let mut data = Vec::with_capacity((rgba.width() * rgba.height() * 4) as usize);
                 for pixel in rgba.pixels() {
                     data.push(pixel[2]); // B
