@@ -82,7 +82,7 @@ impl World {
 
     pub fn new_camera(&mut self) -> GameObjectId {
         let mut obj = self.new_object("Camera");
-        obj.transform.set_compound_pos_first(false);
+        obj.transform.set_compound_pos_first(true);
 
         obj.add_component::<CameraComp>();
 
