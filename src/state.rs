@@ -139,6 +139,7 @@ impl State {
         self.size = new_size;
         self.config.width = new_size.width;
         self.config.height = new_size.height;
+        self.recreate_surface();
     }
 
     pub fn recreate_surface(&mut self) {
