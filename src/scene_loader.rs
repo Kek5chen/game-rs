@@ -17,7 +17,7 @@ use wgpu::TextureFormat;
 use crate::asset_management::materialmanager::{Material, MaterialId};
 use crate::asset_management::mesh::{Mesh, Vertex3D};
 use crate::asset_management::shadermanager::ShaderId;
-use crate::asset_management::texturemanager::TextureId;
+use crate::asset_management::texturemanager::{TextureId, FALLBACK_DIFFUSE_TEXTURE};
 use crate::drawables::mesh_renderer::MeshRenderer;
 use crate::object::GameObjectId;
 use crate::utils::math::ExtraMatrixMath;
@@ -249,7 +249,10 @@ impl SceneLoader {
         match &texture.data {
             DataContent::Texel(_) => panic!("I CAN'T ADD TEXLESLSSE YET PLS HELP"),
             DataContent::Bytes(data) => {
-                let decoded = image::load_from_memory(data).expect("Couldn't decode image");
+                let decoded = match image::load_from_memory(data) {
+                    Ok(decoded) => decoded,
+                    Err(_) => return FALLBACK_DIFFUSE_TEXTURE,
+                };
                 let rgba = decoded.into_rgba8();
                 let mut data = Vec::with_capacity((rgba.width() * rgba.height() * 4) as usize);
                 for pixel in rgba.pixels() {
