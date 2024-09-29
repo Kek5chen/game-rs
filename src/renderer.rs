@@ -129,6 +129,7 @@ impl Renderer {
     fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> {
         let mut output = self.state.surface.get_current_texture()?;
         if output.suboptimal {
+            drop(output);
             self.state.recreate_surface();
             output = self.state.surface.get_current_texture()?;
         }
