@@ -29,7 +29,8 @@ pub struct RuntimeShader {
 }
 
 pub type ShaderId = usize;
-pub const FALLBACK_SHADER_ID: ShaderId = 1;
+pub const FALLBACK_SHADER_ID: ShaderId = 0;
+pub const DIM3_SHADER_ID: ShaderId = 1;
 
 pub struct ShaderManager {
     next_id: ShaderId,
