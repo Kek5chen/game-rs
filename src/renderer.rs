@@ -67,19 +67,20 @@ impl Renderer {
     }
 
     pub fn create_uniform_buffer(
-        camera_uniform_bind_group_layout: &BindGroupLayout,
+        bind_group_layout: &BindGroupLayout,
         state: &State,
-        camera_data: &CameraData,
+        data_size: usize,
     ) -> (Buffer, BindGroup) {
-        let uniform_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
+        let uniform_buffer = state.device.create_buffer(&BufferDescriptor {
             label: Some("Uniform Buffer"),
-            contents: bytemuck::cast_slice(&[*camera_data]),
+            size: data_size as BufferAddress,
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+            mapped_at_creation: true,
         });
 
         let uniform_bind_group = state.device.create_bind_group(&BindGroupDescriptor {
             label: Some("Uniform Bind Group"),
-            layout: camera_uniform_bind_group_layout,
+            layout: bind_group_layout,
             entries: &[BindGroupEntry {
                 binding: 0,
                 resource: uniform_buffer.as_entire_binding(),
