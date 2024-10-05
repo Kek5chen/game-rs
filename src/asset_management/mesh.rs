@@ -1,8 +1,8 @@
 use std::ops::Range;
 
 use bytemuck::{Pod, Zeroable};
-use nalgebra::{Point, Vector2, Vector3};
-use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferUsages, Device};
+use nalgebra::{Point, Vector2, Vector3, Vector4};
+use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BufferAddress, BufferUsages, Device, VertexAttribute, VertexFormat};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use crate::asset_management::materialmanager::{FALLBACK_MATERIAL_ID, MaterialId};
@@ -159,5 +159,52 @@ impl MeshVertexData<Vertex3D> {
             .map(|v| v.position.into())
             .clone()
             .collect()
+    }
+}
+
+impl Vertex3D {
+    pub fn continuous_descriptor<'a>() -> wgpu::VertexBufferLayout<'a> {
+        // sanity values and checks
+        const VEC2_SIZE: usize = 8;
+        const VEC3_SIZE: usize = 12;
+        const VEC4_SIZE: usize = 16;
+        
+        assert_eq!(size_of::<Vector2<f32>>(), VEC2_SIZE);
+        assert_eq!(size_of::<Vector3<f32>>(), VEC3_SIZE);
+        assert_eq!(size_of::<Vector4<f32>>(), VEC4_SIZE);
+        assert_eq!(size_of::<Vertex3D>(), 56);
+        
+        
+        wgpu::VertexBufferLayout {
+            array_stride: size_of::<Vertex3D>() as BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                VertexAttribute {
+                    format: VertexFormat::Float32x3,
+                    offset: 0,
+                    shader_location: 0,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x2,
+                    offset: VEC3_SIZE as BufferAddress,
+                    shader_location: 1,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x3,
+                    offset: (VEC3_SIZE + VEC2_SIZE) as BufferAddress,
+                    shader_location: 2,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x3,
+                    offset: (VEC3_SIZE * 2 + VEC2_SIZE) as BufferAddress,
+                    shader_location: 3,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x3,
+                    offset: (VEC3_SIZE * 3 + VEC2_SIZE) as BufferAddress,
+                    shader_location: 4,
+                },
+            ],
+        }
     }
 }
