@@ -13,7 +13,9 @@ use wgpu::{
 use winit::window::Window;
 
 use crate::asset_management::assetmanager::DefaultGPUObjects;
-use crate::asset_management::shadermanager::{ShaderId, FALLBACK_SHADER_ID};
+use crate::asset_management::shadermanager::{
+    ShaderId, DIM3_SHADER_ID, FALLBACK_SHADER_ID,
+};
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
 use crate::object::GameObjectId;
@@ -103,6 +105,8 @@ impl Renderer {
     }
 
     pub fn init(&mut self, default_gpu_objects: Rc<DefaultGPUObjects>) {
+        // TODO: Make it possible to pick a shader
+        self.current_pipeline = Some(DIM3_SHADER_ID);
         self.default_gpu_objects = Some(default_gpu_objects);
         let camera_data = Box::new(CameraData::empty());
         let (camera_uniform_buffer, camera_uniform_bind_group) = Self::create_uniform_init(
@@ -157,7 +161,7 @@ impl Renderer {
             self.state.recreate_surface();
             output = self.state.surface.get_current_texture()?;
         }
-        
+
         let color_view = output
             .texture
             .create_view(&TextureViewDescriptor::default());
