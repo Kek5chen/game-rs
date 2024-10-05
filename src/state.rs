@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use wgpu::{Adapter, CompositeAlphaMode, Device, DeviceDescriptor, Extent3d, Features, Instance, PowerPreference, PresentMode, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
+use wgpu::{Adapter, CompositeAlphaMode, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, PresentMode, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
@@ -17,8 +17,7 @@ pub struct State {
 
 impl State {
     fn setup_instance() -> Instance {
-        let instance = Instance::default();
-        instance
+        Instance::default()
     }
     
     fn setup_surface(instance: &Instance, window: &Window) -> Surface<'static> {
@@ -33,7 +32,7 @@ impl State {
     }
 
     async fn setup_adapter(instance: &Instance, surface: &Surface<'_>) -> Adapter {
-        let adapter = instance
+        instance
             .request_adapter(&RequestAdapterOptions {
                 power_preference: PowerPreference::HighPerformance,
                 compatible_surface: Some(surface),
@@ -42,8 +41,7 @@ impl State {
             .await
             .expect(
                 "Couldn't find anything that supports rendering stuff. How are you reading this..?",
-            );
-        adapter
+            )
     }
 
     async fn get_device_and_queue(adapter: &Adapter) -> (Rc<Device>, Rc<Queue>) {
@@ -72,7 +70,7 @@ impl State {
         } else if caps.present_modes.contains(&PresentMode::Immediate) {
             PresentMode::Immediate
         } else {
-            caps.present_modes.first().unwrap().clone()
+            *caps.present_modes.first().unwrap()
         };
         
         let config = SurfaceConfiguration {
@@ -90,7 +88,7 @@ impl State {
     }
 
     fn setup_depth_texture(size: &PhysicalSize<u32>, device: &Device) -> Texture {
-        let depth_texture = device.create_texture(&TextureDescriptor {
+        device.create_texture(&TextureDescriptor {
             label: Some("Depth Texture"),
             size: Extent3d {
                 width: size.width,
@@ -103,8 +101,7 @@ impl State {
             format: TextureFormat::Depth32Float,
             usage: TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[TextureFormat::Depth32Float],
-        });
-        depth_texture
+        })
     }
 
     pub async fn new(window: &Window) -> Self {
