@@ -2,11 +2,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
-use std::mem::size_of;
 use std::path::Path;
 use std::rc::Rc;
-
-use wgpu::{BindGroupLayout, ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState, Device, Face, FragmentState, FrontFace, MultisampleState, PipelineCompilationOptions, PipelineLayout, PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, StencilState, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
+use wgpu::*;
 
 use crate::asset_management::assetmanager::DefaultGPUObjects;
 use crate::asset_management::mesh::Vertex3D;
@@ -110,9 +108,7 @@ impl Shader {
 
 #[allow(dead_code)]
 impl ShaderManager {
-    pub fn init(&mut self) {
-        
-    }
+    pub fn init(&mut self) {}
 
     pub fn new() -> ShaderManager {
         let mut shader_manager = ShaderManager {
@@ -159,8 +155,7 @@ impl ShaderManager {
     }
 
     pub fn add_combined_shader(&mut self, name: &str, shader: &str) -> ShaderId {
-        let shader_id = self.add_shader(name.to_string(), shader.to_string());
-        shader_id
+        self.add_shader(name.to_string(), shader.to_string())
     }
 
     pub fn add_shader(&mut self, name: String, code: String) -> ShaderId {
