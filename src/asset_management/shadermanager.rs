@@ -66,37 +66,7 @@ impl Shader {
                 module: &shader,
                 entry_point: "vs_main",
                 compilation_options: PipelineCompilationOptions::default(),
-                buffers: &[VertexBufferLayout {
-                    step_mode: VertexStepMode::Vertex,
-                    attributes: &[
-                        VertexAttribute {
-                            format: VertexFormat::Float32x3,
-                            offset: 0,
-                            shader_location: 0,
-                        },
-                        VertexAttribute {
-                            format: VertexFormat::Float32x2,
-                            offset: 3 * 4, // one vec3
-                            shader_location: 1,
-                        },
-                        VertexAttribute {
-                            format: VertexFormat::Float32x3,
-                            offset: 3 * 4 + 2 * 4, // one vec3 and a vec2
-                            shader_location: 2,
-                        },
-                        VertexAttribute {
-                            format: VertexFormat::Float32x3,
-                            offset: 2 * 4 * 3 + 2 * 4, // two vec3 and a vec2
-                            shader_location: 3,
-                        },
-                        VertexAttribute {
-                            format: VertexFormat::Float32x3,
-                            offset: 3 * 4 * 3 + 2 * 4, // three vec3 and a vec2
-                            shader_location: 4,
-                        },
-                    ],
-                    array_stride: size_of::<Vertex3D>() as u64,
-                }], // TODO: Make this cleaner
+                buffers: &[Vertex3D::continuous_descriptor()],
             },
             primitive: PrimitiveState {
                 topology: PrimitiveTopology::TriangleList,
