@@ -4,18 +4,11 @@ use std::rc::Rc;
 use log::{debug, error};
 use nalgebra::{Matrix4, Perspective3};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{
-    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, Buffer, BufferUsages, Color,
-    CommandEncoder, CommandEncoderDescriptor, LoadOp, Operations, RenderPass,
-    RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp,
-    SurfaceError, SurfaceTexture, TextureView, TextureViewDescriptor,
-};
+use wgpu::*;
 use winit::window::Window;
 
 use crate::asset_management::assetmanager::DefaultGPUObjects;
-use crate::asset_management::shadermanager::{
-    ShaderId, DIM3_SHADER_ID, FALLBACK_SHADER_ID,
-};
+use crate::asset_management::shadermanager::{ShaderId, DIM3_SHADER_ID, FALLBACK_SHADER_ID};
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
 use crate::object::GameObjectId;

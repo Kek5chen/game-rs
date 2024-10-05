@@ -1,5 +1,9 @@
 use std::rc::Rc;
-use wgpu::{Adapter, CompositeAlphaMode, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, PresentMode, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
+use wgpu::{
+    Adapter, CompositeAlphaMode, Device, DeviceDescriptor, Extent3d, Features, Instance,
+    PowerPreference, PresentMode, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration,
+    Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
+};
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
@@ -19,7 +23,7 @@ impl State {
     fn setup_instance() -> Instance {
         Instance::default()
     }
-    
+
     fn setup_surface(instance: &Instance, window: &Window) -> Surface<'static> {
         let surface = unsafe {
             // We are creating a 'static lifetime out of a local reference
@@ -46,12 +50,15 @@ impl State {
 
     async fn get_device_and_queue(adapter: &Adapter) -> (Rc<Device>, Rc<Queue>) {
         let (device, queue) = adapter
-            .request_device(&DeviceDescriptor {
-                label: Some("Renderer Hardware"),
-                required_features: Features::default(),
-                required_limits: Default::default(),
-                memory_hints: Default::default(),
-            }, None)
+            .request_device(
+                &DeviceDescriptor {
+                    label: Some("Renderer Hardware"),
+                    required_features: Features::default(),
+                    required_limits: Default::default(),
+                    memory_hints: Default::default(),
+                },
+                None,
+            )
             .await
             .unwrap();
         (Rc::new(device), Rc::new(queue))
@@ -64,7 +71,7 @@ impl State {
         device: &Device,
     ) -> SurfaceConfiguration {
         let caps = surface.get_capabilities(adapter);
-        
+
         let present_mode = if caps.present_modes.contains(&PresentMode::Mailbox) {
             PresentMode::Mailbox
         } else if caps.present_modes.contains(&PresentMode::Immediate) {
@@ -72,7 +79,7 @@ impl State {
         } else {
             *caps.present_modes.first().unwrap()
         };
-        
+
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
             format: *caps.formats.first().unwrap(),
