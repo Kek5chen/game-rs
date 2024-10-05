@@ -45,8 +45,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn funnyinit(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> {
-    let mut city = SceneLoader::load(world, "./testmodels/GM Big City/gm_bigcity.obj")?;
+    // add city
+    let mut city = SceneLoader::load(world, "./testmodels/testmap/testmap.fbx")?;
+    
+    city.transform.set_uniform_scale(0.05);
 
+    // add colliders to city
     for child in &mut city.children {
         let collider = child.add_component::<Collider3D>();
         let drawable = &child.drawable;
@@ -60,30 +64,32 @@ fn funnyinit(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> 
         };
 
         let collider = collider.get_collider_mut();
-        collider.unwrap().set_shape(SharedShape::mesh(renderer.mesh()).unwrap())
+        let shape = SharedShape::mesh(renderer.mesh()).unwrap();
+        collider.unwrap().set_shape(shape)
     }
 
-    let mut char_controller = world.new_object("CharacterController");
+    world.add_child(city);
+    
+    // Prepare camera
     let mut camera = world.new_camera();
+    camera.add_component::<CameraController>();
 
+    // Prepare character controller
+    let mut char_controller = world.new_object("CharacterController");
     char_controller
          .transform
          .set_position(Vector3::new(0.0, 100.0, 0.0));
-    //obj2.transform.set_uniform_scale(0.03);
-
-    //city.add_component::<Collider3D>().get_collider_mut().unwrap()
-    //    .set_shape(SharedShape::halfspace(Unit::new_unchecked(Vector3::new(0.0, 1.0, 0.0))));
-    world.add_child(city);
-
-    world.add_child(char_controller);
-    char_controller.add_child(camera);
-    camera.add_component::<CameraController>();
+    
     let collider = char_controller.add_component::<Collider3D>();
     collider.get_collider_mut().unwrap().set_shape(SharedShape::capsule_y(1.0, 0.25));
 
     let _rigid_body = char_controller.add_component::<RigidBodyComponent>();
     char_controller.add_component::<PlayerMovement>();
 
+    char_controller.add_child(camera);
+    world.add_child(char_controller);
+
+    
     world.print_objects();
 
     Ok(())
