@@ -43,6 +43,29 @@ pub struct Renderer {
 }
 
 impl Renderer {
+    pub fn create_uniform_init(
+        bind_group_layout: &BindGroupLayout,
+        state: &State,
+        data: &'_ [u8],
+    ) -> (Buffer, BindGroup) {
+        let uniform_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Uniform Buffer"),
+            contents: data,
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        });
+
+        let uniform_bind_group = state.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Uniform Bind Group"),
+            layout: bind_group_layout,
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+        });
+
+        (uniform_buffer, uniform_bind_group)
+    }
+
     pub fn create_uniform_buffer(
         camera_uniform_bind_group_layout: &BindGroupLayout,
         state: &State,
@@ -81,14 +104,14 @@ impl Renderer {
     pub fn init(&mut self, default_gpu_objects: Rc<DefaultGPUObjects>) {
         self.default_gpu_objects = Some(default_gpu_objects);
         let camera_data = Box::new(CameraData::empty());
-        let (camera_uniform_buffer, camera_uniform_bind_group) = Self::create_uniform_buffer(
+        let (camera_uniform_buffer, camera_uniform_bind_group) = Self::create_uniform_init(
             &self
                 .default_gpu_objects
                 .as_ref()
                 .unwrap()
                 .camera_uniform_bind_group_layout,
             &self.state,
-            &camera_data,
+            bytemuck::cast_slice(&[*camera_data]),
         );
         self.camera_render_data = Some(CameraRenderData {
             camera_uniform_data: camera_data,
