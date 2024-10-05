@@ -112,7 +112,7 @@ impl State {
         };
 
         let instance = Self::setup_instance();
-        let surface = Self::setup_surface(&instance, &window);
+        let surface = Self::setup_surface(&instance, window);
         let adapter = Self::setup_adapter(&instance, &surface).await;
         let (device, queue) = Self::get_device_and_queue(&adapter).await;
         let config = Self::configure_surface(&size, &surface, &adapter, &device);
