@@ -77,7 +77,7 @@ impl State {
         } else if caps.present_modes.contains(&PresentMode::Immediate) {
             PresentMode::Immediate
         } else {
-            *caps.present_modes.first().unwrap()
+            caps.present_modes.first().cloned().unwrap_or(PresentMode::Fifo)
         };
 
         let config = SurfaceConfiguration {
