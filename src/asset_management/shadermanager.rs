@@ -27,7 +27,9 @@ pub struct RuntimeShader {
 }
 
 pub type ShaderId = usize;
+// The fallback shader if a pipeline fails
 pub const FALLBACK_SHADER_ID: ShaderId = 0;
+// The default 3D shader.
 pub const DIM3_SHADER_ID: ShaderId = 1;
 
 pub struct ShaderManager {
