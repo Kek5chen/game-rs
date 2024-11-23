@@ -18,6 +18,17 @@
           buildInputs = [
             libxkbcommon
             libGL
+            cmake
+
+            rustPlatform.bindgenHook
+
+            # Needed for static linking assimp in russimp-sys in russimp
+            stdenv.cc.cc.lib
+            zlib.static
+
+            # Dependency of openssl-sys
+            pkg-config
+            openssl
 
             # WINIT_UNIX_BACKEND=wayland
             wayland
@@ -27,8 +38,14 @@
             xorg.libXrandr
             xorg.libXi
             xorg.libX11
+
+            # To make Vulkan available
+            vulkan-headers
+            vulkan-loader
+            vulkan-validation-layers
           ];
-          LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}:${pkgs.vulkan-loader}/lib";
+
+          LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}";
         };
       });
 }
