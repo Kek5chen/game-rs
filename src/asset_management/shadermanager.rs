@@ -65,7 +65,7 @@ impl Shader {
             layout: Some(&pipeline_layout),
             vertex: VertexState {
                 module: &shader,
-                entry_point: "vs_main",
+                entry_point: Some("vs_main"),
                 compilation_options: PipelineCompilationOptions::default(),
                 buffers: &[Vertex3D::continuous_descriptor()],
             },
@@ -88,7 +88,7 @@ impl Shader {
             multisample: MultisampleState::default(),
             fragment: Some(FragmentState {
                 module: &shader,
-                entry_point: "fs_main",
+                entry_point: Some("fs_main"),
                 compilation_options: PipelineCompilationOptions::default(),
                 targets: &[Some(ColorTargetState {
                     format: TextureFormat::Bgra8UnormSrgb,
