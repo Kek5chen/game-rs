@@ -157,6 +157,7 @@ impl MeshVertexData<Vertex3D> {
         self.vertices
             .iter()
             .map(|v| v.position.into())
+            .map(|v: Point<f32, 3>| v * 1.0f32)
             .clone()
             .collect()
     }

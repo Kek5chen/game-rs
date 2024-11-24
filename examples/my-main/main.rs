@@ -48,7 +48,7 @@ fn funnyinit(world: &mut World, _window: &Window) -> Result<(), Box<dyn Error>> 
     // add city
     let mut city = SceneLoader::load(world, "./testmodels/testmap/testmap.fbx")?;
     
-    city.transform.set_uniform_scale(0.05);
+    city.transform.set_uniform_scale(0.01);
 
     // add colliders to city
     for child in &mut city.children {
