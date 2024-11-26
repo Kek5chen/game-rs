@@ -11,7 +11,7 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use crate::asset_management::assetmanager::DefaultGPUObjects;
 use crate::asset_management::shadermanager;
-use crate::asset_management::shadermanager::{ShaderId, ShaderManager};
+use crate::asset_management::shadermanager::ShaderId;
 use crate::asset_management::texturemanager::{
     FALLBACK_DIFFUSE_TEXTURE, FALLBACK_NORMAL_TEXTURE, FALLBACK_SHININESS_TEXTURE, TextureId,
 };
@@ -142,7 +142,6 @@ pub struct RuntimeMaterial {
 pub struct MaterialManager {
     materials: HashMap<usize, MaterialItem>,
     next_id: MaterialId,
-    pub shaders: ShaderManager,
     device: Option<Rc<Device>>,
     queue: Option<Rc<Queue>>,
     default_gpu_objects: Option<Rc<DefaultGPUObjects>>,
@@ -159,7 +158,6 @@ pub enum MaterialError {
 #[allow(dead_code)]
 impl MaterialManager {
     pub fn new() -> MaterialManager {
-        let shader_manager = ShaderManager::new();
         let fallback = Material {
             name: "Fallback Material".to_string(),
             diffuse: Vector3::new(1.0, 1.0, 1.0),
@@ -173,7 +171,6 @@ impl MaterialManager {
         let mut manager = MaterialManager {
             materials: HashMap::new(),
             next_id: 0,
-            shaders: shader_manager,
             device: None,
             queue: None,
             default_gpu_objects: None,
@@ -189,7 +186,6 @@ impl MaterialManager {
         self.device = None;
         self.queue = None;
         self.default_gpu_objects = None;
-        self.shaders.invalidate_runtime();
     }
 
     pub fn init_runtime(
@@ -200,8 +196,6 @@ impl MaterialManager {
     ) {
         self.device = Some(device.clone());
         self.queue = Some(queue.clone());
-        self.shaders
-            .init_runtime(device, default_gpu_objects.clone());
         self.default_gpu_objects = Some(default_gpu_objects)
     }
 

@@ -231,7 +231,6 @@ impl Renderer {
 
         let shader = world
             .assets
-            .materials
             .shaders
             .get_shader(current_pipeline)
             .expect("3D Pipeline should've been initialized previously");

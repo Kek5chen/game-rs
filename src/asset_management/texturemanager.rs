@@ -158,7 +158,7 @@ impl Texture {
         let raw = &self.raw;
 
         let gpu_tex = match self.raw.data {
-            None => self.initialize_empty_texture(device, queue, raw),
+            None => self.initialize_empty_texture(device, raw),
             Some(_) => self.initialize_preset_texture(device, queue, raw),
         };
         let view = gpu_tex.create_view(&TextureViewDescriptor {
@@ -221,7 +221,7 @@ impl Texture {
         )
     }
     
-    fn initialize_empty_texture(&self, device: &Device, queue: &Queue, raw: &RawTexture) -> wgpu::Texture {
+    fn initialize_empty_texture(&self, device: &Device, raw: &RawTexture) -> wgpu::Texture {
         device.create_texture(
             &self.initialize_texture_descriptor(raw),
         )

@@ -216,7 +216,6 @@ impl SceneLoader {
     fn load_materials(scene: &Scene, world: &mut World) -> HashMap<u32, MaterialId> {
         let shader3d = world
             .assets
-            .materials
             .shaders
             .find_shader_by_name("3D")
             .unwrap_or_default();

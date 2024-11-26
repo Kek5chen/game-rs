@@ -8,6 +8,7 @@ use wgpu::{
 
 use crate::asset_management::{MaterialManager, TextureManager};
 use crate::asset_management::meshmanager::MeshManager;
+use crate::asset_management::shadermanager::ShaderManager;
 
 pub struct DefaultGPUObjects {
     pub camera_uniform_bind_group_layout: BindGroupLayout,
@@ -17,6 +18,7 @@ pub struct DefaultGPUObjects {
 
 pub struct AssetManager {
     pub textures: TextureManager,
+    pub shaders: ShaderManager,
     pub materials: MaterialManager,
     pub meshes: MeshManager,
     pub default_gpu_objects: Option<Rc<DefaultGPUObjects>>,
@@ -26,6 +28,7 @@ impl AssetManager {
     pub fn new() -> AssetManager {
         AssetManager {
             textures: TextureManager::new(),
+            shaders: ShaderManager::new(),
             materials: MaterialManager::new(),
             meshes: MeshManager::new(),
             default_gpu_objects: None,
@@ -34,6 +37,7 @@ impl AssetManager {
 
     pub fn invalidate(&mut self) {
         self.textures.invalidate_runtime();
+        self.shaders.invalidate_runtime();
         self.materials.invalidate_runtime();
         self.meshes.invalidate_runtime();
     }
@@ -127,6 +131,7 @@ impl AssetManager {
         let gpu_objs = self.default_gpu_objects.clone().unwrap();
         
         self.textures.init_runtime(device.clone(), queue.clone(), gpu_objs.clone());
+        self.shaders.init_runtime(device.clone(), gpu_objs.clone());
         self.materials.init_runtime(device.clone(), queue.clone(), gpu_objs.clone());
         self.meshes.init_runtime(device.clone(), gpu_objs.clone());
     }
