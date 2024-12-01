@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use wgpu::Device;
-
-use crate::asset_management::assetmanager::DefaultGPUObjects;
+use crate::asset_management::bindgroup_layout_manager::MODEL_UBGL_ID;
 use crate::asset_management::mesh::{Mesh, RuntimeMesh};
+use crate::world::World;
 
 pub type MeshId = usize;
 
@@ -17,7 +17,6 @@ pub struct MeshManager {
     meshes: HashMap<MeshId, MeshItem>,
     next_id: MeshId,
     device: Option<Rc<Device>>,
-    default_gpu_objects: Option<Rc<DefaultGPUObjects>>,
 }
 
 #[allow(dead_code)]
@@ -27,7 +26,6 @@ impl MeshManager {
             meshes: HashMap::new(),
             next_id: 0,
             device: None,
-            default_gpu_objects: None,
         }
     }
 
@@ -36,12 +34,10 @@ impl MeshManager {
             mesh.runtime = None;
         }
         self.device = None;
-        self.default_gpu_objects = None;
     }
 
-    pub fn init_runtime(&mut self, device: Rc<Device>, default_gpu_objects: Rc<DefaultGPUObjects>) {
+    pub fn init_runtime(&mut self, device: Rc<Device>) {
         self.device = Some(device);
-        self.default_gpu_objects = Some(default_gpu_objects)
     }
 
     pub fn add_mesh(&mut self, mesh: Box<Mesh>) -> MeshId {
@@ -85,13 +81,10 @@ impl MeshManager {
             return mesh.runtime.as_ref();
         }
 
+        let model_bgl = World::instance().assets.bind_group_layouts.get_bind_group_layout(MODEL_UBGL_ID).unwrap();
         let runtime_mesh = mesh.raw.as_mut().init_runtime(
             self.device.as_ref().unwrap(),
-            &self
-                .default_gpu_objects
-                .as_ref()
-                .unwrap()
-                .model_uniform_bind_group_layout,
+            model_bgl
         );
         mesh.runtime = Some(runtime_mesh);
         mesh.runtime.as_ref()
@@ -103,13 +96,10 @@ impl MeshManager {
             return mesh.runtime.as_mut();
         }
 
+        let model_bgl = World::instance().assets.bind_group_layouts.get_bind_group_layout(MODEL_UBGL_ID).unwrap();
         let runtime_mesh = mesh.raw.as_mut().init_runtime(
             self.device.as_ref().unwrap(),
-            &self
-                .default_gpu_objects
-                .as_ref()
-                .unwrap()
-                .model_uniform_bind_group_layout,
+            model_bgl,
         );
         mesh.runtime = Some(runtime_mesh);
         mesh.runtime.as_mut()

@@ -6,8 +6,7 @@ use nalgebra::{Matrix4, Perspective3};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::*;
 use winit::window::Window;
-
-use crate::asset_management::assetmanager::DefaultGPUObjects;
+use crate::asset_management::bindgroup_layout_manager::CAMERA_UBGL_ID;
 use crate::asset_management::shadermanager::{ShaderId, DIM3_SHADER_ID, FALLBACK_SHADER_ID};
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
@@ -34,7 +33,6 @@ pub struct Renderer {
     window: Window,
     current_pipeline: Option<ShaderId>,
     camera_render_data: Option<CameraRenderData>,
-    default_gpu_objects: Option<Rc<DefaultGPUObjects>>,
 }
 
 impl Renderer {
@@ -93,21 +91,16 @@ impl Renderer {
             window,
             current_pipeline: None,
             camera_render_data: None,
-            default_gpu_objects: None,
         }
     }
 
-    pub fn init(&mut self, default_gpu_objects: Rc<DefaultGPUObjects>) {
+    pub fn init(&mut self) {
         // TODO: Make it possible to pick a shader
         self.current_pipeline = Some(DIM3_SHADER_ID);
-        self.default_gpu_objects = Some(default_gpu_objects);
         let camera_data = Box::new(CameraData::empty());
+        let camera_bgl = World::instance().assets.bind_group_layouts.get_bind_group_layout(CAMERA_UBGL_ID).unwrap();
         let (camera_uniform_buffer, camera_uniform_bind_group) = Self::create_uniform_init(
-            &self
-                .default_gpu_objects
-                .as_ref()
-                .unwrap()
-                .camera_uniform_bind_group_layout,
+            &camera_bgl,
             &self.state,
             bytemuck::cast_slice(&[*camera_data]),
         );

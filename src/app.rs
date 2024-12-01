@@ -135,7 +135,7 @@ impl ApplicationHandler for App {
 
         self.world.assets.init_runtime(state.device.clone(), state.queue.clone());
 
-        renderer.init(self.world.assets.default_gpu_objects.clone().unwrap());
+        renderer.init();
 
         self.renderer = Some(renderer);
 

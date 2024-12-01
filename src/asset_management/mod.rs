@@ -8,3 +8,4 @@ pub mod mesh;
 pub mod meshmanager;
 pub mod shadermanager;
 pub mod texturemanager;
+pub mod bindgroup_layout_manager;

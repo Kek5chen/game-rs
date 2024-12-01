@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wgpu = { version = "23.0.0", features = ["vulkan-portability"] }
+wgpu = { version = "23.0.1", features = ["vulkan-portability"] }
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }
 winit = { version = "0.30.5", features = ["x11"] }
 env_logger = { version = "0.11.5", features = ["auto-color"] }

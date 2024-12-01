@@ -3,7 +3,6 @@ use std::rc::Rc;
 
 use wgpu::{AddressMode, Device, Extent3d, Queue, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension};
 use wgpu::util::{DeviceExt, TextureDataOrder};
-use crate::asset_management::assetmanager::DefaultGPUObjects;
 
 pub const FALLBACK_DIFFUSE_TEXTURE: TextureId = 0;
 pub const FALLBACK_NORMAL_TEXTURE: TextureId = 1;
@@ -36,7 +35,6 @@ pub struct TextureManager {
     next_id: TextureId,
     device: Option<Rc<Device>>,
     queue: Option<Rc<Queue>>,
-    default_gpu_objects: Option<Rc<DefaultGPUObjects>>
 }
 
 #[allow(dead_code)]
@@ -61,7 +59,6 @@ impl TextureManager {
             next_id: 0,
             device: None,
             queue: None,
-            default_gpu_objects: None,
         };
 
         const FALLBACK_SIZE: u32 = 35;
@@ -83,10 +80,9 @@ impl TextureManager {
         manager
     }
 
-    pub fn init_runtime(&mut self, device: Rc<Device>, queue: Rc<Queue>, default_gpu_objects: Rc<DefaultGPUObjects>) {
+    pub fn init_runtime(&mut self, device: Rc<Device>, queue: Rc<Queue>) {
         self.device = Some(device);
         self.queue = Some(queue);
-        self.default_gpu_objects = Some(default_gpu_objects)
     }
     
     pub fn invalidate_runtime(&mut self) {

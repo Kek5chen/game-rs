@@ -6,8 +6,9 @@ use std::path::Path;
 use std::rc::Rc;
 use wgpu::*;
 
-use crate::asset_management::assetmanager::DefaultGPUObjects;
+use crate::asset_management::bindgroup_layout_manager::{CAMERA_UBGL_ID, MATERIAL_UBGL_ID, MODEL_UBGL_ID};
 use crate::asset_management::mesh::Vertex3D;
+use crate::world::World;
 
 pub struct ShaderItem {
     raw: Shader,
@@ -36,7 +37,6 @@ pub struct ShaderManager {
     next_id: ShaderId,
     shaders: HashMap<ShaderId, ShaderItem>,
     device: Option<Rc<Device>>,
-    default_gpu_objects: Option<Rc<DefaultGPUObjects>>,
 }
 
 impl Shader {
@@ -117,7 +117,6 @@ impl ShaderManager {
             next_id: 0,
             shaders: HashMap::new(),
             device: None,
-            default_gpu_objects: None,
         };
         shader_manager.add_shader(
             "Fallback".to_string(),
@@ -135,12 +134,10 @@ impl ShaderManager {
             shader.runtime = None;
         }
         self.device = None;
-        self.default_gpu_objects = None;
     }
 
-    pub fn init_runtime(&mut self, device: Rc<Device>, default_gpu_objects: Rc<DefaultGPUObjects>) {
+    pub fn init_runtime(&mut self, device: Rc<Device>) {
         self.device = Some(device);
-        self.default_gpu_objects = Some(default_gpu_objects);
         self.init();
     }
 
@@ -178,12 +175,16 @@ impl ShaderManager {
     pub(crate) fn get_shader(&mut self, id: ShaderId) -> Option<&RuntimeShader> {
         let shader_item = self.shaders.get_mut(&id)?;
         if shader_item.runtime.is_none() {
-            let default_gpu_objects = self.default_gpu_objects.as_ref().unwrap().as_ref();
+            let world = World::instance();
+            let bgls = &world.assets.bind_group_layouts;
+            let camera_ubgl = bgls.get_bind_group_layout(CAMERA_UBGL_ID).unwrap();
+            let model_ubgl = bgls.get_bind_group_layout(MODEL_UBGL_ID).unwrap();
+            let material_ubgl = bgls.get_bind_group_layout(MATERIAL_UBGL_ID).unwrap();
             let runtime_shader = shader_item.raw.initialize_combined_runtime(
                 self.device.clone().unwrap().as_ref(),
-                &default_gpu_objects.camera_uniform_bind_group_layout,
-                &default_gpu_objects.model_uniform_bind_group_layout,
-                &default_gpu_objects.material_uniform_bind_group_layout,
+                camera_ubgl,
+                &model_ubgl,
+                &material_ubgl,
             );
             shader_item.runtime = Some(runtime_shader);
         }
