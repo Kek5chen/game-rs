@@ -53,10 +53,10 @@ pub struct RuntimeMeshData {
 pub struct MeshVertexData<T> {
     pub(crate) vertices: Vec<T>,
     pub(crate) indices: Option<Vec<u32>>, // <--- put this
-} //         |
-  //         |
-pub struct Mesh {
-    //         here
+}                                    //         |
+                                     //         |
+pub struct Mesh {                    //         |
+    //         here <---------------------------- i forgor why tho :<
     pub(crate) data: MeshVertexData<Vertex3D>,
     pub material_ranges: Vec<(MaterialId, Range<u32>)>,
 }
