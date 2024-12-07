@@ -66,13 +66,14 @@ impl Material {
                 .textures
                 .get_runtime_texture_ensure_init(diffuse_texture_id)
                 .unwrap();
+
             let normal_texture_id = self.diffuse_texture.unwrap_or(FALLBACK_NORMAL_TEXTURE);
-            // TODO: Implement normal texture into bind group
             let normal_texture = (*world)
                 .assets
                 .textures
                 .get_runtime_texture_ensure_init(normal_texture_id)
                 .unwrap();
+
             let shininess_texture_id = self.diffuse_texture.unwrap_or(FALLBACK_SHININESS_TEXTURE);
             // TODO: Implement shininess texture into bind group
             let _shininess_texture = (*world)
@@ -80,7 +81,9 @@ impl Material {
                 .textures
                 .get_runtime_texture_ensure_init(shininess_texture_id)
                 .unwrap();
+
             let mat_bgl = (&mut *world).assets.bind_group_layouts.get_bind_group_layout(MATERIAL_UBGL_ID).unwrap();
+
             let bind_group = device.create_bind_group(&BindGroupDescriptor {
                 label: Some("Material Bind Group"),
                 layout: mat_bgl,
@@ -230,9 +233,15 @@ impl MaterialManager {
 
     pub fn get_runtime_material_mut(&mut self, id: MaterialId) -> Option<&mut RuntimeMaterial> {
         let mat = self.materials.get_mut(&id)?;
+        if mat.runtime.is_none() {
+            mat.runtime = Some(mat.raw.init_runtime(
+                World::instance(),
+                self.device.as_ref()?.as_ref(),
+                self.queue.as_ref()?.as_ref(),
+            ));
+        }
         mat.runtime.as_mut()
     }
-    
     fn init_runtime_material_internal(
         world: &mut World,
         material: &mut MaterialItem,
