@@ -1,6 +1,10 @@
 [package]
 name = "syrillian"
-version = "0.1.0"
+description = "Real-time 3D game engine built on top of wgpu, focusing on flexibility, modularity, and a straightforward, entity-component-driven workflow"
+license = "MIT"
+repository = "https://github.com/Kek5chen/syrillian"
+authors = [ "Kek5chen" ]
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
