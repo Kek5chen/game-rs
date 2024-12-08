@@ -5,9 +5,9 @@ use nalgebra::Vector3;
 use num_traits::Zero;
 use rapier3d::prelude::{vector, LockedAxes};
 use winit::keyboard::KeyCode;
-use gamers::components::{Component, RigidBodyComponent};
-use gamers::object::GameObjectId;
-use gamers::world::World;
+use syrillian::components::{Component, RigidBodyComponent};
+use syrillian::object::GameObjectId;
+use syrillian::world::World;
 
 pub struct PlayerMovement {
 	parent: GameObjectId,

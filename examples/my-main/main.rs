@@ -12,12 +12,12 @@ use nalgebra::Vector3;
 use rapier3d::prelude::*;
 use winit::window::Window;
 
-use gamers::app::App;
-use gamers::components::{Collider3D, RigidBodyComponent};
-use gamers::components::collider::MeshShapeExtra;
-use gamers::drawables::mesh_renderer::MeshRenderer;
-use gamers::scene_loader::SceneLoader;
-use gamers::world::World;
+use syrillian::app::App;
+use syrillian::components::{Collider3D, RigidBodyComponent};
+use syrillian::components::collider::MeshShapeExtra;
+use syrillian::drawables::mesh_renderer::MeshRenderer;
+use syrillian::scene_loader::SceneLoader;
+use syrillian::world::World;
 use crate::camera_controller::CameraController;
 use crate::player_movement::PlayerMovement;
 
@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .parse_env(log_env) // Or override with whatever env says
         .init();
 
-    let mut app = App::create("game-rs", 800, 600);
+    let mut app = App::create("SYRILLIAN", 800, 600);
     app.with_init(Some(funnyinit));
     app.with_update(Some(update));
     

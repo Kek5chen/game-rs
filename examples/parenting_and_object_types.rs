@@ -8,15 +8,15 @@ use log::{error, LevelFilter};
 use nalgebra::Vector3;
 use winit::window::Window;
 
-use gamers::app::App;
-use gamers::asset_management::mesh::Mesh;
-use gamers::buffer::{CUBE, CUBE_INDICES};
-use gamers::components::freecam::FreecamController;
-use gamers::components::RotateComponent;
-use gamers::logichooks::LogicHooks;
-use gamers::drawables::mesh_renderer::MeshRenderer;
-use gamers::scene_loader::SceneLoader;
-use gamers::world::World;
+use syrillian::app::App;
+use syrillian::asset_management::mesh::Mesh;
+use syrillian::buffer::{CUBE, CUBE_INDICES};
+use syrillian::components::freecam::FreecamController;
+use syrillian::components::RotateComponent;
+use syrillian::logichooks::LogicHooks;
+use syrillian::drawables::mesh_renderer::MeshRenderer;
+use syrillian::scene_loader::SceneLoader;
+use syrillian::world::World;
 
 
 #[tokio::main]
@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .parse_env(log_env) // Or override with whatever env says
         .init();
 
-    let mut app = App::create("game-rs", 800, 600);
+    let mut app = App::create("SYRILLIAN", 800, 600);
     app.with_init(Some(init));
     app.with_update(Some(update));
     

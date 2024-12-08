@@ -1,7 +1,7 @@
 use nalgebra::{UnitQuaternion, Vector3};
-use gamers::components::Component;
-use gamers::object::GameObjectId;
-use gamers::world::World;
+use syrillian::components::Component;
+use syrillian::object::GameObjectId;
+use syrillian::world::World;
 
 pub struct CameraController {
 	parent: GameObjectId,
