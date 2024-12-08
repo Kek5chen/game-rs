@@ -247,7 +247,7 @@ impl Renderer {
             .state
             .depth_texture
             .create_view(&TextureViewDescriptor::default());
-        let mut encoder = self.state.device.create_command_encoder(&CommandEncoderDescriptor {
+        let encoder = self.state.device.create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Main Encoder"),
         });
 
