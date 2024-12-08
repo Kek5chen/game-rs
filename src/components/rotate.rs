@@ -38,7 +38,7 @@ impl Component for RotateComponent {
         let combined_rotation = y_rotation * x_rotation;
 
         transform.set_rotation(combined_rotation);
-        self.iteration += 1.0;
+        self.iteration += delta_time;
     }
 
     unsafe fn get_parent(&self) -> GameObjectId {
