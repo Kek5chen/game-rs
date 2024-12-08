@@ -20,8 +20,8 @@ Syrillian Engine is a Rust-based, real-time 3D game engine built on top of [wgpu
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/syrillian-engine.git
-   cd syrillian-engine
+   git clone https://github.com/Kek5chen/syrillian.git
+   cd syrillian
    ```
 
 2. Build the engine:
