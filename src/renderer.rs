@@ -6,13 +6,49 @@ use nalgebra::{Matrix4, Perspective3};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::*;
 use winit::window::Window;
-use crate::asset_management::bindgroup_layout_manager::CAMERA_UBGL_ID;
-use crate::asset_management::shadermanager::{ShaderId, DIM3_SHADER_ID, FALLBACK_SHADER_ID};
+use crate::asset_management::bindgroup_layout_manager::{CAMERA_UBGL_ID, POST_PROCESS_BGL_ID};
+use crate::asset_management::shadermanager::{ShaderId, DIM3_SHADER_ID, FALLBACK_SHADER_ID, POST_PROCESS_SHADER_ID};
 use crate::components::camera::CameraData;
 use crate::components::CameraComp;
 use crate::object::GameObjectId;
 use crate::state::State;
 use crate::world::World;
+
+struct PostProcessPass {
+    bind_group: BindGroup,
+}
+
+impl PostProcessPass {
+    fn new(device: &Device, layout: &BindGroupLayout, view: &TextureView) -> Self {
+        let sampler = device.create_sampler(&SamplerDescriptor {
+            label: Some("PostProcess Sampler"),
+            address_mode_u: AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Linear,
+            mipmap_filter: FilterMode::Linear,
+            ..Default::default()
+        });
+
+        let bind_group = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("PostProcess Bind Group"),
+            layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(view),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&sampler),
+                }
+            ],
+        });
+
+        Self { bind_group }
+    }
+}
 
 pub struct RenderContext {
     pub output: SurfaceTexture,
@@ -33,6 +69,12 @@ pub struct Renderer {
     window: Window,
     current_pipeline: Option<ShaderId>,
     camera_render_data: Option<CameraRenderData>,
+
+    // Offscreen texture for rendering the scene before post-processing
+    offscreen_texture: Texture,
+    offscreen_view: TextureView,
+
+    post_process_pass: Option<PostProcessPass>,
 }
 
 impl Renderer {
@@ -86,17 +128,38 @@ impl Renderer {
     pub(crate) async fn new(window: Window) -> Self {
         let state = Box::new(State::new(&window).await);
 
+        let (offscreen_texture, offscreen_view) = Self::create_offscreen_texture(&state.device, state.config.width, state.config.height, state.config.format);
+
         Renderer {
             state,
             window,
             current_pipeline: None,
             camera_render_data: None,
+            offscreen_texture,
+            offscreen_view,
+            post_process_pass: None,
         }
+    }
+
+    fn create_offscreen_texture(device: &Device, width: u32, height: u32, format: TextureFormat) -> (Texture, TextureView) {
+        let texture = device.create_texture(&TextureDescriptor {
+            label: Some("Offscreen Texture"),
+            size: Extent3d { width, height, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format,
+            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&TextureViewDescriptor::default());
+        (texture, view)
     }
 
     pub fn init(&mut self) {
         // TODO: Make it possible to pick a shader
         self.current_pipeline = Some(DIM3_SHADER_ID);
+
         let camera_data = Box::new(CameraData::empty());
         let camera_bgl = World::instance().assets.bind_group_layouts.get_bind_group_layout(CAMERA_UBGL_ID).unwrap();
         let (camera_uniform_buffer, camera_uniform_bind_group) = Self::create_uniform_init(
@@ -109,35 +172,58 @@ impl Renderer {
             camera_uniform_buffer,
             camera_uniform_bind_group,
         });
+
+        let world = World::instance();
+        let post_bgl = world.assets.bind_group_layouts.get_bind_group_layout(POST_PROCESS_BGL_ID).unwrap();
+        self.post_process_pass = Some(PostProcessPass::new(
+            &self.state.device,
+            post_bgl,
+            &self.offscreen_view
+        ));
     }
 
     pub fn render_world(&mut self, world: &mut World) -> bool {
-        let ctx = match self.begin_render() {
-            Ok(ctx) => Some(ctx),
+        let mut ctx = match self.begin_render() {
+            Ok(ctx) => ctx,
             Err(SurfaceError::Lost) => {
                 self.state.resize(self.state.size);
-                None
+                return false;
             }
             Err(SurfaceError::OutOfMemory) => {
-                error!("The application ran out of memory");
-                None
+                error!("The application ran out of GPU memory!");
+                return false;
             }
             Err(e) => {
-                error!("{:?}", e);
-                None
+                error!("Surface error: {:?}", e);
+                return false;
             }
         };
 
-        if ctx.is_none() {
-            return false;
-        }
-
-        let mut ctx = ctx.unwrap();
-
         self.render(&mut ctx, world);
-        self.end_render(ctx);
+
+        self.end_render(world, ctx);
 
         true
+    }
+
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+        self.state.resize(new_size);
+
+        // Re-create the offscreen texture and post process bind group after resize
+        let (new_offscreen, new_offscreen_view) = Self::create_offscreen_texture(
+            &self.state.device,
+            self.state.config.width,
+            self.state.config.height,
+            self.state.config.format
+        );
+        self.offscreen_texture = new_offscreen;
+        self.offscreen_view = new_offscreen_view;
+
+        if let Some(pp) = &mut self.post_process_pass {
+            let world = World::instance();
+            let post_bgl = world.assets.bind_group_layouts.get_bind_group_layout(POST_PROCESS_BGL_ID).unwrap();
+            *pp = PostProcessPass::new(&self.state.device, post_bgl, &self.offscreen_view);
+        }
     }
 
     fn begin_render(&mut self) -> Result<RenderContext, SurfaceError> {
@@ -145,30 +231,26 @@ impl Renderer {
         if output.suboptimal {
             drop(output);
             self.state.recreate_surface();
-            output = self.state.surface.get_current_texture()?;
+            let st = match self.state.surface.get_current_texture() {
+                Ok(st) => st,
+                Err(e) => {
+                    return Err(e);
+                }
+            };
+            output = st;
         }
 
         let color_view = output
             .texture
             .create_view(&TextureViewDescriptor::default());
-        // let depth_view = self.depth_texture.create_view(&TextureViewDescriptor {
-        //     label: Some("Depth Texture View"),
-        //     format: Some(TextureFormat::Depth32Float),
-        //     dimension: Some(TextureViewDimension::D2),
-        //     aspect: TextureAspect::DepthOnly,
-        //     base_mip_level: 0,
-        //     mip_level_count: None,
-        //     base_array_layer: 0,
-        //     array_layer_count: None,
-        // });
         let depth_view = self
             .state
             .depth_texture
             .create_view(&TextureViewDescriptor::default());
-        let encoder = self
-            .state
-            .device
-            .create_command_encoder(&CommandEncoderDescriptor::default());
+        let mut encoder = self.state.device.create_command_encoder(&CommandEncoderDescriptor {
+            label: Some("Main Encoder"),
+        });
+
         if self.current_pipeline.is_none() {
             self.current_pipeline = Some(FALLBACK_SHADER_ID);
         }
@@ -229,9 +311,9 @@ impl Renderer {
             .expect("3D Pipeline should've been initialized previously");
 
         let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
-            label: Some("Render Pass"),
+            label: Some("Offscreen Render Pass"),
             color_attachments: &[Some(RenderPassColorAttachment {
-                view: &ctx.color_view,
+                view: &self.offscreen_view,
                 resolve_target: None,
                 ops: Operations {
                     load: LoadOp::Clear(Color::BLACK),
@@ -241,13 +323,12 @@ impl Renderer {
             depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                 view: &ctx.depth_view,
                 depth_ops: Some(Operations {
-                    load: LoadOp::Clear(1.0f32),
+                    load: LoadOp::Clear(1.0),
                     store: StoreOp::Store,
                 }),
                 stencil_ops: None,
             }),
-            timestamp_writes: None,
-            occlusion_query_set: None,
+            ..Default::default()
         });
 
         rpass.set_pipeline(&shader.pipeline);
@@ -257,7 +338,7 @@ impl Renderer {
             self.traverse_and_render(
                 &mut *world_ptr,
                 &mut rpass,
-                &mut world.children,
+                &world.children,
                 Matrix4::identity(),
             );
         }
@@ -267,7 +348,7 @@ impl Renderer {
         &self,
         world: &mut World,
         rpass: &mut RenderPass,
-        children: &mut [GameObjectId],
+        children: &[GameObjectId],
         combined_matrix: Matrix4<f32>,
     ) {
         let world_ptr: *mut World = world;
@@ -292,7 +373,34 @@ impl Renderer {
         }
     }
 
-    fn end_render(&mut self, ctx: RenderContext) {
+    fn render_final_pass(&mut self, world: &mut World, ctx: &mut RenderContext) {
+        let mut rpass = ctx.encoder.begin_render_pass(&RenderPassDescriptor {
+            label: Some("PostProcess Render Pass"),
+            color_attachments: &[Some(RenderPassColorAttachment {
+                view: &ctx.color_view,
+                resolve_target: None,
+                ops: Operations {
+                    load: LoadOp::Clear(Color::BLACK),
+                    store: StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            ..Default::default()
+        });
+
+        let post_shader = world
+            .assets
+            .shaders
+            .get_shader(POST_PROCESS_SHADER_ID)
+            .expect("PostProcess shader should be initialized");
+        rpass.set_pipeline(&post_shader.pipeline);
+        rpass.set_bind_group(0, &self.post_process_pass.as_ref().unwrap().bind_group, &[]);
+        rpass.draw(0..6, 0..1);
+    }
+
+    fn end_render(&mut self, world: &mut World, mut ctx: RenderContext) {
+        self.render_final_pass(world, &mut ctx);
+
         self.state.queue.submit(Some(ctx.encoder.finish()));
         ctx.output.present();
         self.window.request_redraw();

@@ -38,6 +38,7 @@ pub struct BindGroupLayoutManager {
 pub const CAMERA_UBGL_ID: BGLId = 0;
 pub const MODEL_UBGL_ID: BGLId = 1;
 pub const MATERIAL_UBGL_ID: BGLId = 2;
+pub const POST_PROCESS_BGL_ID: BGLId = 3;
 
 impl BindGroupLayoutManager {
     pub fn new() -> Self {
@@ -120,6 +121,26 @@ impl BindGroupLayoutManager {
             },
         ]);
         assert_eq!(id, MATERIAL_UBGL_ID);
+
+        let id = manager.add_bind_group_layout(Some("Post-Processing Bind Group Layout"), vec![
+            BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages::FRAGMENT,
+                ty: BindingType::Texture {
+                    sample_type: TextureSampleType::Float { filterable: true },
+                    view_dimension: TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+            BindGroupLayoutEntry {
+                binding: 1,
+                visibility: ShaderStages::FRAGMENT,
+                ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                count: None,
+            },
+        ]);
+        assert_eq!(id, POST_PROCESS_BGL_ID);
 
         manager
     }

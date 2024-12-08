@@ -185,7 +185,7 @@ impl ApplicationHandler for App {
                 ..
             } => event_loop.exit(),
             WindowEvent::Resized(size) => {
-                renderer.state.resize(size);
+                renderer.resize(size);
 
                 // For I have sinned, this now becomes my recovery.
                 // I was forgiven, shall it come haunt me later.

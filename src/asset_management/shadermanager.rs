@@ -6,7 +6,7 @@ use std::path::Path;
 use std::rc::Rc;
 use wgpu::*;
 
-use crate::asset_management::bindgroup_layout_manager::{CAMERA_UBGL_ID, MATERIAL_UBGL_ID, MODEL_UBGL_ID};
+use crate::asset_management::bindgroup_layout_manager::{CAMERA_UBGL_ID, MATERIAL_UBGL_ID, MODEL_UBGL_ID, POST_PROCESS_BGL_ID};
 use crate::asset_management::mesh::Vertex3D;
 use crate::world::World;
 
@@ -32,6 +32,8 @@ pub type ShaderId = usize;
 pub const FALLBACK_SHADER_ID: ShaderId = 0;
 // The default 3D shader.
 pub const DIM3_SHADER_ID: ShaderId = 1;
+
+pub const POST_PROCESS_SHADER_ID: ShaderId = 2;
 
 pub struct ShaderManager {
     next_id: ShaderId,
@@ -106,6 +108,57 @@ impl Shader {
             pipeline,
         }
     }
+
+    pub fn initialize_post_process_runtime(
+        &mut self,
+        device: &Device,
+        post_process_bind_group_layout: &BindGroupLayout,
+    ) -> RuntimeShader {
+        let shader = device.create_shader_module(ShaderModuleDescriptor {
+            label: Some(&self.name),
+            source: ShaderSource::Wgsl(Cow::Borrowed(&self.code)),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+            label: Some(&format!("{} PostProcess Pipeline Layout", self.name)),
+            bind_group_layouts: &[post_process_bind_group_layout],
+            push_constant_ranges: &[],
+        });
+        let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+            label: Some(&format!("{} PostProcess Pipeline", self.name)),
+            layout: Some(&pipeline_layout),
+            vertex: VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            primitive: PrimitiveState {
+                topology: PrimitiveTopology::TriangleList,
+                ..Default::default()
+            },
+            depth_stencil: None, // No depth for post-processing
+            multisample: MultisampleState::default(),
+            fragment: Some(FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(ColorTargetState {
+                    format: TextureFormat::Bgra8UnormSrgb,
+                    blend: None,
+                    write_mask: ColorWrites::all(),
+                })],
+            }),
+            multiview: None,
+            cache: None,
+        });
+
+        RuntimeShader {
+            name: self.name.clone(),
+            module: shader,
+            pipeline_layout,
+            pipeline,
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -125,6 +178,10 @@ impl ShaderManager {
         shader_manager.add_shader(
             "3D Default Pipeline".to_string(),
             include_str!("../shaders/shader3d.wgsl").to_string(),
+        );
+        shader_manager.add_shader(
+            "PostProcess".to_string(),
+            include_str!("../shaders/fullscreen_passhthrough.wgsl").to_string(),
         );
         shader_manager
     }
@@ -177,15 +234,29 @@ impl ShaderManager {
         if shader_item.runtime.is_none() {
             let world = World::instance();
             let bgls = &world.assets.bind_group_layouts;
-            let camera_ubgl = bgls.get_bind_group_layout(CAMERA_UBGL_ID).unwrap();
-            let model_ubgl = bgls.get_bind_group_layout(MODEL_UBGL_ID).unwrap();
-            let material_ubgl = bgls.get_bind_group_layout(MATERIAL_UBGL_ID).unwrap();
-            let runtime_shader = shader_item.raw.initialize_combined_runtime(
-                self.device.clone().unwrap().as_ref(),
-                camera_ubgl,
-                &model_ubgl,
-                &material_ubgl,
-            );
+
+            let runtime_shader = match id {
+                FALLBACK_SHADER_ID | DIM3_SHADER_ID => {
+                    let camera_ubgl = bgls.get_bind_group_layout(CAMERA_UBGL_ID).unwrap();
+                    let model_ubgl = bgls.get_bind_group_layout(MODEL_UBGL_ID).unwrap();
+                    let material_ubgl = bgls.get_bind_group_layout(MATERIAL_UBGL_ID).unwrap();
+                    shader_item.raw.initialize_combined_runtime(
+                        self.device.clone().unwrap().as_ref(),
+                        camera_ubgl,
+                        model_ubgl,
+                        material_ubgl,
+                    )
+                },
+                POST_PROCESS_SHADER_ID => {
+                    let post_process_ubgl = bgls.get_bind_group_layout(POST_PROCESS_BGL_ID).unwrap();
+                    shader_item.raw.initialize_post_process_runtime(
+                        self.device.clone().unwrap().as_ref(),
+                        post_process_ubgl,
+                    )
+                },
+                _ => panic!("Shader ID not recognized"),
+            };
+
             shader_item.runtime = Some(runtime_shader);
         }
         shader_item.runtime.as_ref()
