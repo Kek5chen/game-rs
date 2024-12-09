@@ -4,7 +4,7 @@ Syrillian Engine is a Rust-based, real-time 3D game engine built on top of [wgpu
 
 ## Features
 
-- **Entity-Component System (ECS)**: Syrillian Engine provides a flexible ECS structure, allowing you to attach components (such as transforms, cameras, and custom logic) to game objects with minimal boilerplate.
+- **Object Oriented Components**: Syrillian Engine provides a flexible OOP structure, allowing you to attach components (such as transforms, camera controllers, and custom logic) to game objects with minimal boilerplate.
 - **Renderer Powered by wgpu**: Leverages the cross-platform [wgpu](https://github.com/gfx-rs/wgpu) API for graphics, giving you Vulkan/DX/Metal-level performance and portability.
 - **Different Code Design Approach**: While other game engines focus on a very rust-based approach to their design, Syrillian focuses on ease of use and code simplicity.
 
